@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('admins', function (Blueprint $table) {
+        Schema::create('permissions', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->comment('管理員名稱');
-            $table->string('email')->unique()->comment('管理員信箱');
-            $table->string('password')->comment('管理員密碼');
+            $table->string('name')->comment('權限名稱');
+            $table->string('code')->unique()->comment('權限代碼');
+            $table->text('description')->comment('權限描述');
             $table->tinyInteger('status')->default(1)->comment('狀態：1=啟用，0=停用');
             $table->timestamps();
         });
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('admins');
+        Schema::dropIfExists('permissions');
     }
 };

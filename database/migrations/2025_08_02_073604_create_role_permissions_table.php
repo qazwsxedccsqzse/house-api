@@ -11,13 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('admins', function (Blueprint $table) {
+        Schema::create('role_permissions', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->comment('管理員名稱');
-            $table->string('email')->unique()->comment('管理員信箱');
-            $table->string('password')->comment('管理員密碼');
-            $table->tinyInteger('status')->default(1)->comment('狀態：1=啟用，0=停用');
+            $table->foreignId('role_id')->constrained()->onDelete('cascade');
+            $table->foreignId('permission_id')->constrained()->onDelete('cascade');
             $table->timestamps();
+
+            // 添加唯一索引防止重複分配
+            $table->unique(['role_id', 'permission_id']);
         });
     }
 
@@ -26,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('admins');
+        Schema::dropIfExists('role_permissions');
     }
 };
