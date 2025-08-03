@@ -99,6 +99,16 @@ class AdminService
         return $this->adminRepo->deleteAdmin($id);
     }
 
+    public function assignRoles(int $adminId, array $roles): bool
+    {
+        return $this->adminRepo->assignRoles($adminId, $roles);
+    }
+
+    public function getAdminById(int $id): ?Admin
+    {
+        return $this->adminRepo->getAdminById($id);
+    }
+
     public function getAllAdmins(int $page = 1, int $pageSize = 10, ?string $search = null): LengthAwarePaginator
     {
         return $this->adminRepo->getAllAdmins($page, $pageSize, $search);

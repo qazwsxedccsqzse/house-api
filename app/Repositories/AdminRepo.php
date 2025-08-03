@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Models\Admin;
+use App\Models\Role;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Hash;
 
 class AdminRepo
 {
@@ -59,18 +61,71 @@ class AdminRepo
 
     public function createAdmin(array $data): Admin
     {
-        return $this->admin->create($data);
+        // 如果有密碼，進行加密
+        if (isset($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        }
+
+        $admin = $this->admin->create($data);
+
+        // 如果有角色，進行關聯
+        if (isset($data['roles']) && is_array($data['roles'])) {
+            $roleIds = Role::whereIn('code', $data['roles'])->pluck('id')->toArray();
+            $admin->roles()->attach($roleIds);
+        }
+
+        return $admin->load('roles');
     }
 
     public function updateAdmin(int $id, array $data): bool
     {
-        $updatedCount = $this->admin->newModelQuery()->where('id', $id)->update($data);
-        return $updatedCount > 0;
+        $admin = $this->admin->find($id);
+        if (!$admin) {
+            return false;
+        }
+
+        // 如果有密碼，進行加密
+        if (isset($data['password']) && !empty($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        } else {
+            unset($data['password']);
+        }
+
+        $admin->update($data);
+
+        // 如果有角色，更新關聯
+        if (isset($data['roles']) && is_array($data['roles'])) {
+            $roleIds = Role::whereIn('code', $data['roles'])->pluck('id')->toArray();
+            $admin->roles()->sync($roleIds);
+        }
+
+        return true;
     }
 
     public function deleteAdmin(int $id): bool
     {
-        $deleted = $this->admin->newModelQuery()->where('id', $id)->delete();
-        return $deleted > 0;
+        $admin = $this->admin->find($id);
+        if (!$admin) {
+            return false;
+        }
+
+        // 刪除角色關聯
+        $admin->roles()->detach();
+
+        // 刪除管理員
+        return $admin->delete();
+    }
+
+    public function assignRoles(int $adminId, array $roles): bool
+    {
+        $admin = $this->admin->find($adminId);
+        if (!$admin) {
+            return false;
+        }
+
+        $roleIds = Role::whereIn('code', $roles)->pluck('id')->toArray();
+        $admin->roles()->sync($roleIds);
+
+        return true;
     }
 }

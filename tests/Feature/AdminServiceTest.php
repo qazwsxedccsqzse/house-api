@@ -117,7 +117,7 @@ class AdminServiceTest extends TestCase
         $this->adminService->signin($credentials);
     }
 
-    public function test_create_admin(): void
+    public function test_create_admin_basic(): void
     {
         $adminData = [
             'name' => 'Test Admin',
@@ -360,5 +360,199 @@ class AdminServiceTest extends TestCase
 
         $this->assertInstanceOf(LengthAwarePaginator::class, $result);
         $this->assertEquals(1, $result->total());
+    }
+
+    public function test_create_admin(): void
+    {
+        // 創建角色
+        $role = Role::factory()->create([
+            'name' => '超級管理員',
+            'code' => 'super-admin',
+        ]);
+
+        $adminData = [
+            'username' => 'newadmin',
+            'password' => 'password123',
+            'name' => '新管理員',
+            'email' => 'newadmin@example.com',
+            'status' => 1,
+            'roles' => ['super-admin'],
+        ];
+
+        $admin = $this->adminService->createAdmin($adminData);
+
+        $this->assertInstanceOf(Admin::class, $admin);
+        $this->assertEquals('newadmin', $admin->username);
+        $this->assertEquals('新管理員', $admin->name);
+        $this->assertEquals('newadmin@example.com', $admin->email);
+        $this->assertEquals(1, $admin->status);
+        $this->assertTrue(Hash::check('password123', $admin->password));
+        $this->assertCount(1, $admin->roles);
+        $this->assertEquals('super-admin', $admin->roles->first()->code);
+    }
+
+    public function test_update_admin(): void
+    {
+        // 創建角色
+        $role = Role::factory()->create([
+            'name' => '超級管理員',
+            'code' => 'super-admin',
+        ]);
+
+        // 創建管理員
+        $admin = Admin::factory()->create([
+            'username' => 'oldadmin',
+            'name' => '舊管理員',
+            'email' => 'oldadmin@example.com',
+            'status' => 1,
+        ]);
+
+        $updateData = [
+            'username' => 'updatedadmin',
+            'password' => 'newpassword123',
+            'name' => '更新管理員',
+            'email' => 'updatedadmin@example.com',
+            'status' => 1,
+            'roles' => ['super-admin'],
+        ];
+
+        $success = $this->adminService->updateAdmin($admin->id, $updateData);
+
+        $this->assertTrue($success);
+
+        // 重新獲取管理員
+        $updatedAdmin = $this->adminService->getAdminById($admin->id);
+        $this->assertEquals('updatedadmin', $updatedAdmin->username);
+        $this->assertEquals('更新管理員', $updatedAdmin->name);
+        $this->assertEquals('updatedadmin@example.com', $updatedAdmin->email);
+        $this->assertTrue(Hash::check('newpassword123', $updatedAdmin->password));
+        $this->assertCount(1, $updatedAdmin->roles);
+        $this->assertEquals('super-admin', $updatedAdmin->roles->first()->code);
+    }
+
+    public function test_update_admin_without_password(): void
+    {
+        // 創建管理員
+        $admin = Admin::factory()->create([
+            'username' => 'testadmin',
+            'name' => '測試管理員',
+            'email' => 'testadmin@example.com',
+            'status' => 1,
+        ]);
+
+        $originalPassword = $admin->password;
+
+        $updateData = [
+            'username' => 'updatedadmin',
+            'name' => '更新管理員',
+            'email' => 'updatedadmin@example.com',
+            'status' => 1,
+        ];
+
+        $success = $this->adminService->updateAdmin($admin->id, $updateData);
+
+        $this->assertTrue($success);
+
+        // 重新獲取管理員
+        $updatedAdmin = $this->adminService->getAdminById($admin->id);
+        $this->assertEquals('updatedadmin', $updatedAdmin->username);
+        $this->assertEquals($originalPassword, $updatedAdmin->password); // 密碼應該不變
+    }
+
+    public function test_delete_admin(): void
+    {
+        // 創建角色
+        $role = Role::factory()->create([
+            'name' => '超級管理員',
+            'code' => 'super-admin',
+        ]);
+
+        // 創建管理員
+        $admin = Admin::factory()->create([
+            'username' => 'deleteadmin',
+            'name' => '刪除管理員',
+            'email' => 'deleteadmin@example.com',
+            'status' => 1,
+        ]);
+
+        $admin->roles()->attach($role);
+
+        $success = $this->adminService->deleteAdmin($admin->id);
+
+        $this->assertTrue($success);
+
+        // 確認管理員已被刪除
+        $deletedAdmin = $this->adminService->getAdminById($admin->id);
+        $this->assertNull($deletedAdmin);
+
+        // 確認角色關聯已被刪除
+        $this->assertDatabaseMissing('admin_roles', [
+            'admin_id' => $admin->id,
+            'role_id' => $role->id,
+        ]);
+    }
+
+    public function test_assign_roles(): void
+    {
+        // 創建角色
+        $role1 = Role::factory()->create([
+            'name' => '超級管理員',
+            'code' => 'super-admin',
+        ]);
+
+        $role2 = Role::factory()->create([
+            'name' => '內容管理員',
+            'code' => 'content-admin',
+        ]);
+
+        // 創建管理員
+        $admin = Admin::factory()->create([
+            'username' => 'testadmin',
+            'name' => '測試管理員',
+            'email' => 'testadmin@example.com',
+            'status' => 1,
+        ]);
+
+        $roles = ['super-admin', 'content-admin'];
+
+        $success = $this->adminService->assignRoles($admin->id, $roles);
+
+        $this->assertTrue($success);
+
+        // 重新獲取管理員
+        $updatedAdmin = $this->adminService->getAdminById($admin->id);
+        $this->assertCount(2, $updatedAdmin->roles);
+        $this->assertTrue($updatedAdmin->roles->contains('code', 'super-admin'));
+        $this->assertTrue($updatedAdmin->roles->contains('code', 'content-admin'));
+    }
+
+    public function test_assign_roles_to_nonexistent_admin(): void
+    {
+        $roles = ['super-admin'];
+
+        $success = $this->adminService->assignRoles(999, $roles);
+
+        $this->assertFalse($success);
+    }
+
+    public function test_update_nonexistent_admin(): void
+    {
+        $updateData = [
+            'username' => 'updatedadmin',
+            'name' => '更新管理員',
+            'email' => 'updatedadmin@example.com',
+            'status' => 1,
+        ];
+
+        $success = $this->adminService->updateAdmin(999, $updateData);
+
+        $this->assertFalse($success);
+    }
+
+    public function test_delete_nonexistent_admin(): void
+    {
+        $success = $this->adminService->deleteAdmin(999);
+
+        $this->assertFalse($success);
     }
 }

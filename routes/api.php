@@ -17,6 +17,10 @@ Route::group(['prefix' => 'auth'], function () {
 // 管理者列表相關 api
 Route::group(['prefix' => 'admins', 'middleware' => 'admin.token'], function () {
     Route::get('/', [AdminController::class, 'index']);
+    Route::post('/', [AdminController::class, 'store']);
+    Route::put('/{id}', [AdminController::class, 'update']);
+    Route::delete('/{id}', [AdminController::class, 'destroy']);
+    Route::put('/{id}/roles', [AdminController::class, 'assignRoles']);
 });
 
 
