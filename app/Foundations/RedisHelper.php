@@ -54,7 +54,7 @@ class RedisHelper
     protected \Illuminate\Redis\Connections\Connection $redis;
     protected string $prefix;
 
-    public function __construct(string $connection = 'cache')
+    public function __construct(string $connection = 'admin-redis')
     {
         $this->redis = Redis::connection($connection);
         $this->prefix = config('cache.prefix') . self::SEPARATOR;
