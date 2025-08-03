@@ -52,7 +52,17 @@ class AdminTokenMiddleware
         }
 
         // 檢查 token 是否在 Redis 中存在
-        $adminJson = $this->redisHelper->get('admin:token:' . $token);
+        $adminId = $this->redisHelper->get('admin:token:' . $token);
+        if (!$adminId) {
+            return response()->json([
+                'status' => -1,
+                'message' => '請登入',
+                'data' => null,
+            ], 403);
+        }
+
+        // 從 admin ID 獲取完整的 admin 資料
+        $adminJson = $this->redisHelper->get('admin:id:' . $adminId);
         if (!$adminJson) {
             return response()->json([
                 'status' => -1,
@@ -61,8 +71,11 @@ class AdminTokenMiddleware
             ], 403);
         }
 
-        // 將 admin 資料添加到請求中，供後續使用
-        $request->merge(['admin' => json_decode($adminJson, true)]);
+        // 將 admin 資料和 admin ID 添加到請求中，供後續使用
+        $request->merge([
+            'admin' => json_decode($adminJson, true),
+            'admin_id' => (int) $adminId
+        ]);
 
         return $next($request);
     }

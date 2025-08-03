@@ -21,6 +21,7 @@ class AdminSeeder extends Seeder
             ['email' => 'admin@example.com'],
             [
                 'name' => '超級管理員',
+                'username' => 'admin', // 新增 username 欄位
                 'email' => 'admin@example.com',
                 'password' => Hash::make('password'),
                 'status' => 1,

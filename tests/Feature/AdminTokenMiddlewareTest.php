@@ -81,9 +81,22 @@ class AdminTokenMiddlewareTest extends TestCase
 
     public function test_valid_token(): void
     {
-        // Mock RedisHelper 返回有效的 admin ID
+        // Mock RedisHelper 返回有效的 admin ID 和 admin 資料
         $this->mock(RedisHelper::class, function ($mock) {
-            $mock->shouldReceive('get')->with('admin:token:valid_token')->andReturn('1');
+            $mock->shouldReceive('get')
+                ->with('admin:token:valid_token')
+                ->andReturn('1');
+
+            $mock->shouldReceive('get')
+                ->with('admin:id:1')
+                ->andReturn(json_encode([
+                    'id' => 1,
+                    'name' => '測試管理員',
+                    'username' => 'testadmin',
+                    'email' => 'test@example.com',
+                    'status' => 1
+                ]));
+
             $mock->shouldReceive('pipeline')->andReturnUsing(function ($callback) {
                 $pipe = Mockery::mock();
                 $pipe->shouldReceive('del')->andReturnSelf();

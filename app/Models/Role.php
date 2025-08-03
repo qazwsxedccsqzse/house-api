@@ -38,7 +38,15 @@ class Role extends Model
      */
     public function permissions(): BelongsToMany
     {
-        return $this->belongsToMany(Permission::class, 'role_permissions');
+        return $this->belongsToMany(Permission::class, 'role_permissions')->withTimestamps();
+    }
+
+    /**
+     * Get the admins that belong to this role.
+     */
+    public function admins(): BelongsToMany
+    {
+        return $this->belongsToMany(Admin::class, 'admin_roles')->withTimestamps();
     }
 
     /**
