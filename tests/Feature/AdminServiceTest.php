@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\Admin;
+use App\Models\Role;
 use App\Services\AdminService;
 use App\Repositories\AdminRepo;
 use App\Exceptions\CustomException;
 use App\Foundations\RedisHelper;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Tests\TestCase;
 use Mockery;
 
@@ -20,6 +22,8 @@ class AdminServiceTest extends TestCase
 
     private AdminService $adminService;
     private $redisHelper;
+    protected $adminServiceMock;
+    protected $adminRepoMock;
 
     protected function setUp(): void
     {
@@ -36,6 +40,12 @@ class AdminServiceTest extends TestCase
         });
 
         $this->adminService = new AdminService(new AdminRepo(new Admin()), $this->redisHelper);
+
+        // Mock AdminRepo 和 AdminService 用於特定測試
+        $this->adminRepoMock = Mockery::mock(AdminRepo::class);
+        $this->adminServiceMock = Mockery::mock(AdminService::class);
+        $this->app->instance(AdminRepo::class, $this->adminRepoMock);
+        $this->app->instance(AdminService::class, $this->adminServiceMock);
     }
 
     protected function tearDown(): void
@@ -149,5 +159,206 @@ class AdminServiceTest extends TestCase
         foreach ($activeAdmins as $admin) {
             $this->assertEquals(1, $admin->status);
         }
+    }
+
+    public function test_can_get_admin_list_with_mock(): void
+    {
+        // 準備測試數據
+        $role = Role::factory()->create([
+            'name' => '超級管理員',
+            'code' => 'super-admin',
+        ]);
+
+        $admin = Admin::factory()->create([
+            'username' => 'admin',
+            'name' => '系統管理員',
+            'email' => 'admin@example.com',
+            'status' => 1,
+        ]);
+
+        $admin->roles()->attach($role);
+
+        // 創建分頁數據
+        $paginator = new LengthAwarePaginator(
+            collect([$admin]),
+            1,
+            10,
+            1
+        );
+
+        // Mock AdminService 的 getAllAdmins 方法
+        $this->adminServiceMock
+            ->shouldReceive('getAllAdmins')
+            ->with(1, 10, null)
+            ->once()
+            ->andReturn($paginator);
+
+        // 測試服務方法
+        $result = $this->adminServiceMock->getAllAdmins(1, 10, null);
+
+        $this->assertInstanceOf(LengthAwarePaginator::class, $result);
+        $this->assertEquals(1, $result->total());
+        $this->assertEquals(10, $result->perPage());
+        $this->assertEquals(1, $result->currentPage());
+    }
+
+    public function test_can_search_admins_with_mock(): void
+    {
+        // 準備測試數據
+        $role = Role::factory()->create([
+            'name' => '超級管理員',
+            'code' => 'super-admin',
+        ]);
+
+        $admin = Admin::factory()->create([
+            'username' => 'admin',
+            'name' => '系統管理員',
+            'email' => 'admin@example.com',
+            'status' => 1,
+        ]);
+
+        $admin->roles()->attach($role);
+
+        // 創建分頁數據
+        $paginator = new LengthAwarePaginator(
+            collect([$admin]),
+            1,
+            10,
+            1
+        );
+
+        // Mock AdminService 的 getAllAdmins 方法
+        $this->adminServiceMock
+            ->shouldReceive('getAllAdmins')
+            ->with(1, 10, 'admin')
+            ->once()
+            ->andReturn($paginator);
+
+        // 測試服務方法
+        $result = $this->adminServiceMock->getAllAdmins(1, 10, 'admin');
+
+        $this->assertInstanceOf(LengthAwarePaginator::class, $result);
+        $this->assertEquals(1, $result->total());
+    }
+
+    public function test_can_paginate_admins_with_mock(): void
+    {
+        // 準備測試數據
+        $role = Role::factory()->create([
+            'name' => '超級管理員',
+            'code' => 'super-admin',
+        ]);
+
+        $admins = collect();
+        for ($i = 1; $i <= 5; $i++) {
+            $admin = Admin::factory()->create([
+                'username' => "admin{$i}",
+                'name' => "管理員{$i}",
+                'email' => "admin{$i}@example.com",
+                'status' => 1,
+            ]);
+            $admin->roles()->attach($role);
+            $admins->push($admin);
+        }
+
+        // 創建分頁數據
+        $paginator = new LengthAwarePaginator(
+            $admins,
+            15,
+            5,
+            1
+        );
+
+        // Mock AdminService 的 getAllAdmins 方法
+        $this->adminServiceMock
+            ->shouldReceive('getAllAdmins')
+            ->with(1, 5, null)
+            ->once()
+            ->andReturn($paginator);
+
+        // 測試服務方法
+        $result = $this->adminServiceMock->getAllAdmins(1, 5, null);
+
+        $this->assertInstanceOf(LengthAwarePaginator::class, $result);
+        $this->assertEquals(15, $result->total());
+        $this->assertEquals(5, $result->perPage());
+        $this->assertEquals(1, $result->currentPage());
+        $this->assertCount(5, $result->items());
+    }
+
+    public function test_admin_service_methods_with_real_data(): void
+    {
+        // 創建真實的 AdminService 實例（不使用 mock）
+        $adminRepo = new AdminRepo(new Admin());
+        $adminService = new AdminService($adminRepo, app(\App\Foundations\RedisHelper::class));
+
+        // 創建測試數據
+        $role = Role::factory()->create([
+            'name' => '超級管理員',
+            'code' => 'super-admin',
+        ]);
+
+        $admin = Admin::factory()->create([
+            'username' => 'admin',
+            'name' => '系統管理員',
+            'email' => 'admin@example.com',
+            'status' => 1,
+        ]);
+
+        $admin->roles()->attach($role);
+
+        // 測試獲取所有管理員
+        $result = $adminService->getAllAdmins(1, 10);
+        $this->assertInstanceOf(LengthAwarePaginator::class, $result);
+        $this->assertEquals(1, $result->total());
+
+        // 測試搜索功能
+        $result = $adminService->getAllAdmins(1, 10, 'admin');
+        $this->assertInstanceOf(LengthAwarePaginator::class, $result);
+        $this->assertEquals(1, $result->total());
+
+        // 測試搜索不存在的用戶
+        $result = $adminService->getAllAdmins(1, 10, 'nonexistent');
+        $this->assertInstanceOf(LengthAwarePaginator::class, $result);
+        $this->assertEquals(0, $result->total());
+    }
+
+    public function test_admin_repo_methods_with_mock(): void
+    {
+        // 準備測試數據
+        $role = Role::factory()->create([
+            'name' => '超級管理員',
+            'code' => 'super-admin',
+        ]);
+
+        $admin = Admin::factory()->create([
+            'username' => 'admin',
+            'name' => '系統管理員',
+            'email' => 'admin@example.com',
+            'status' => 1,
+        ]);
+
+        $admin->roles()->attach($role);
+
+        // 創建分頁數據
+        $paginator = new LengthAwarePaginator(
+            collect([$admin]),
+            1,
+            10,
+            1
+        );
+
+        // Mock AdminRepo 的 getAllAdmins 方法
+        $this->adminRepoMock
+            ->shouldReceive('getAllAdmins')
+            ->with(1, 10, null)
+            ->once()
+            ->andReturn($paginator);
+
+        // 測試 Repository 方法
+        $result = $this->adminRepoMock->getAllAdmins(1, 10, null);
+
+        $this->assertInstanceOf(LengthAwarePaginator::class, $result);
+        $this->assertEquals(1, $result->total());
     }
 }

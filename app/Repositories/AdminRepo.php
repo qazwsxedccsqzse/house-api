@@ -6,6 +6,7 @@ namespace App\Repositories;
 
 use App\Models\Admin;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class AdminRepo
 {
@@ -31,9 +32,24 @@ class AdminRepo
         return $this->admin->newModelQuery()->find($id);
     }
 
-    public function getAllAdmins(): Collection
+    public function getAllAdmins(int $page = 1, int $pageSize = 10, ?string $search = null): LengthAwarePaginator
     {
-        return $this->admin->newModelQuery()->with('roles')->get();
+        $query = $this->admin->newModelQuery()->with('roles');
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('username', 'like', "%{$search}%")
+                  ->orWhere('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        return $query->paginate(
+            perPage: $pageSize,
+            page: $page,
+            columns: ['*'],
+            pageName: 'page',
+        );
     }
 
     public function getActiveAdmins(): Collection

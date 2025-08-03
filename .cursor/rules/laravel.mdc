@@ -37,6 +37,9 @@ alwaysApply: true
   Laravel Best Practices
   - Use Eloquent ORM instead of raw SQL queries when possible.
   - Implement Repository pattern for data access layer.
+  - Implement Service pattern for business logic layer.
+    - For example, user login logic should be written in UserService.php.
+    - Repository should be called in Service if possible.
   - Use Laravel's built-in authentication and authorization features.
   - Utilize Laravel's caching mechanisms for improved performance.
   - Implement job queues for long-running tasks.
@@ -118,3 +121,4 @@ alwaysApply: true
   8. Use Laravel's event and listener system for decoupled code.
   9. Implement proper database transactions for data integrity.
   10. Use Laravel's built-in scheduling features for recurring tasks.
+  11. All comment should be 繁體中文.

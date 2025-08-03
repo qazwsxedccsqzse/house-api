@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Exceptions\CustomException;
 use App\Foundations\RedisHelper;
 use Illuminate\Support\Str;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class AdminService
 {
@@ -98,9 +99,9 @@ class AdminService
         return $this->adminRepo->deleteAdmin($id);
     }
 
-    public function getAllAdmins(): \Illuminate\Database\Eloquent\Collection
+    public function getAllAdmins(int $page = 1, int $pageSize = 10, ?string $search = null): LengthAwarePaginator
     {
-        return $this->adminRepo->getAllAdmins();
+        return $this->adminRepo->getAllAdmins($page, $pageSize, $search);
     }
 
     public function getActiveAdmins(): \Illuminate\Database\Eloquent\Collection
