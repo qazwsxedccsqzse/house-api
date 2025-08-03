@@ -33,7 +33,20 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
-        return response()->json(['message' => '登出成功']);
+        // 從 middleware 中獲取 admin ID
+        $adminId = $request->input('admin_id');
+
+        // 從 Authorization header 中獲取 token
+        $authorization = $request->header('Authorization');
+        $token = substr($authorization, 7); // 移除 "Bearer " 前綴
+
+        // 從 Redis 中刪除 token
+        $this->adminService->logout($adminId, $token);
+
+        return response()->json([
+            'status' => 0,
+            'message' => '登出成功',
+            'data' => null,
+        ]);
     }
 }

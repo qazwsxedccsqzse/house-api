@@ -38,19 +38,14 @@ class AdminService
             $accessToken = Str::random(60);
         } while ($this->redisHelper->exists('admin:token:' . $accessToken));
 
-        // 生成 refresh token
-        $refreshToken = '';
-        do {
-            $refreshToken = Str::random(60);
-        } while ($this->redisHelper->exists('admin:refresh:' . $refreshToken));
 
-        $this->redisHelper->pipeline(function ($pipe) use ($admin, $accessToken, $refreshToken) {
-            $pipe->set('admin:id:' . $admin->id, $admin->id);
+        $this->redisHelper->pipeline(function ($pipe) use ($admin, $accessToken) {
+            $adminJson = json_encode($admin);
+            $pipe->set('admin:id:' . $admin->id, $adminJson);
             $pipe->set('admin:token:' . $accessToken, $admin->id);
-            $pipe->set('admin:refresh:' . $refreshToken, $admin->id);
+
             $pipe->expire('admin:id:' . $admin->id, 3600 * 24 * 30);
             $pipe->expire('admin:token:' . $accessToken, 3600 * 24 * 30);
-            $pipe->expire('admin:refresh:' . $refreshToken, 3600 * 24 * 30);
         });
 
         // 載入角色和權限
@@ -84,7 +79,7 @@ class AdminService
         return [
             'user' => $adminInfo,
             'accessToken' => $accessToken,
-            'refreshToken' => $refreshToken,
+            'refreshToken' => $accessToken,
         ];
     }
 
@@ -111,5 +106,17 @@ class AdminService
     public function getActiveAdmins(): \Illuminate\Database\Eloquent\Collection
     {
         return $this->adminRepo->getActiveAdmins();
+    }
+
+    /**
+     * 登出
+     */
+    public function logout(int $adminId, string $token): void
+    {
+        // 從 Redis 中刪除相關的 token 和 admin 記錄
+        $this->redisHelper->pipeline(function ($pipe) use ($adminId, $token) {
+            $pipe->del('admin:token:' . $token);
+            $pipe->del('admin:id:' . $adminId);
+        });
     }
 }

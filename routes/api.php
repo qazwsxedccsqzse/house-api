@@ -10,7 +10,7 @@ Route::group(['prefix' => 'auth'], function () {
     // 登入
     Route::post('/signin', [AuthController::class, 'signin']);
     // 登出
-    Route::post('/signout', [AuthController::class, 'logout'])->middleware('auth');
+    Route::post('/logout', [AuthController::class, 'logout'])->middleware('admin.token');
 });
 
 
