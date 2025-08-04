@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\MemberController;
+use App\Http\Controllers\Admin\NotificationController;
 
 // 管理者登入註冊相關
 Route::group(['prefix' => 'auth'], function () {
@@ -32,6 +33,16 @@ Route::group(['prefix' => 'admins', 'middleware' => 'admin.token'], function () 
 Route::group(['prefix' => 'members', 'middleware' => 'admin.token'], function () {
     // 用戶列表
     Route::get('/', [MemberController::class, 'index']);
+});
+
+// 通知相關 api
+Route::group(['prefix' => 'notifications', 'middleware' => 'admin.token'], function () {
+    // 取得通知列表
+    Route::get('/', [NotificationController::class, 'index']);
+    // 標記通知為已讀
+    Route::put('/read/{id}', [NotificationController::class, 'markAsRead']);
+    // 標記所有通知為已讀
+    Route::put('/read-all', [NotificationController::class, 'markAllAsRead']);
 });
 
 

@@ -18,13 +18,4 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->render(function (CustomException $e, $request) {
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'status' => -1,
-                    'message' => $e->getMessage(),
-                    'data' => null,
-                ], $e->getStatusCode());
-            }
-        });
     })->create();

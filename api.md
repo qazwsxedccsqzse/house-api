@@ -111,7 +111,7 @@
 
 ### 獲取用戶列表
 
-- **端點**: `GET /api/users`
+- **端點**: `GET /api/user`
 - **呼叫檔案**: `src/api/services/userService.ts` → `findById()`
 - **使用位置**: `src/_mock/handlers/_user.ts` → `userList`
 - **響應**:
@@ -129,7 +129,7 @@
 
 ### 獲取用戶詳情
 
-- **端點**: `GET /api/users/:id`
+- **端點**: `GET /api/user/:id`
 - **呼叫檔案**: `src/api/services/userService.ts` → `findById()`
 - **使用位置**: 用戶詳情頁面 (待實作)
 - **響應**:
@@ -186,50 +186,16 @@
   "data": {
     "notifications": [
       {
-        "id": 1,
-        "type": "mention|tags|access|file|article|project",
-        "user": "string",
-        "action": "string",
-        "target": "string",
-        "targetType": "string",
-        "time": "string",
-        "department": "string",
-        "message": "string",
-        "hasReply": true,
-        "hasAvatar": true,
-        "hasActions": true,
-        "fileName": "string",
-        "fileSize": "string",
-        "fileType": "string",
-        "editedTime": "string",
-        "tags": ["string"],
-        "meetingTitle": "string",
-        "meetingDate": "string",
-        "meetingTime": "string",
-        "attendees": 0,
-        "userName": "string",
-        "userEmail": "string",
-        "taskTitle": "string",
-        "dueDate": "string",
-        "assignees": 0,
-        "files": [
-          {
-            "name": "string",
-            "type": "string",
-            "size": "string"
-          }
-        ],
-        "artworks": [
-          {
-            "id": "string",
-            "title": "string"
-          }
-        ],
-        "hasProfileAction": true
+        "id": 5,
+        "type": "article",
+        "user": "Raymond Pawell",
+        "message": "posted a new article 2024 Roadmap",
+        "time": "1 hour ago",
+        "hasAvatar": true
       }
     ],
-    "total": 0,
-    "unread": 0
+    "total": 1,
+    "unread": 4
   }
 }
 ```

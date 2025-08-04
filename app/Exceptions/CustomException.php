@@ -34,4 +34,21 @@ class CustomException extends Exception
     {
         return self::STATUS_CODE[$this->getCode()] ?? 400;
     }
+
+    public function render()
+    {
+        return response()->json([
+            'status' => -1,
+            'message' => $this->getMessage(),
+            'data' => null,
+        ], $this->getStatusCode());
+    }
+
+    /**
+     * Report the exception.
+     */
+    public function report(): void
+    {
+        // ...
+    }
 }
