@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\MemberController;
 use App\Http\Controllers\Admin\NotificationController;
+use App\Http\Controllers\Admin\NoticeController;
 
 // 管理者登入註冊相關
 Route::group(['prefix' => 'auth'], function () {
@@ -43,6 +44,20 @@ Route::group(['prefix' => 'notifications', 'middleware' => 'admin.token'], funct
     Route::put('/read/{id}', [NotificationController::class, 'markAsRead']);
     // 標記所有通知為已讀
     Route::put('/read-all', [NotificationController::class, 'markAllAsRead']);
+});
+
+// 公告相關 api
+Route::group(['prefix' => 'notices', 'middleware' => 'admin.token'], function () {
+    // 取得公告列表
+    Route::get('/', [NoticeController::class, 'index']);
+    // 創建公告
+    Route::post('/', [NoticeController::class, 'store']);
+    // 取得單個公告
+    Route::get('/{id}', [NoticeController::class, 'show']);
+    // 更新公告
+    Route::put('/{id}', [NoticeController::class, 'update']);
+    // 刪除公告
+    Route::delete('/{id}', [NoticeController::class, 'destroy']);
 });
 
 
