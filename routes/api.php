@@ -4,7 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\AdminController;
-use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\MemberController;
 
 // 管理者登入註冊相關
 Route::group(['prefix' => 'auth'], function () {
@@ -29,9 +29,9 @@ Route::group(['prefix' => 'admins', 'middleware' => 'admin.token'], function () 
 });
 
 // 用戶列表相關 api
-Route::group(['prefix' => 'users', 'middleware' => 'admin.token'], function () {
+Route::group(['prefix' => 'members', 'middleware' => 'admin.token'], function () {
     // 用戶列表
-    Route::get('/', [UserController::class, 'index']);
+    Route::get('/', [MemberController::class, 'index']);
 });
 
 

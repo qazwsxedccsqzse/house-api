@@ -14,15 +14,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('user_fb_tokens', function (Blueprint $table) {
+        Schema::create('member_fb_tokens', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id')->comment('用戶ID');
+            $table->unsignedBigInteger('member_id')->comment('用戶ID');
             $table->string('token')->comment('粉專或群組的 token');
             $table->unsignedTinyInteger('type')->comment('粉專或群組 1: 粉專 2: 群組');
             $table->string('expired_at')->comment('token 過期時間');
             $table->datetimes();
 
-            $table->index('user_id');
+            $table->index('member_id');
         });
     }
 
@@ -31,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('user_fb_tokens');
+        Schema::dropIfExists('member_fb_tokens');
     }
 };

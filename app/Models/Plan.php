@@ -44,9 +44,9 @@ class Plan extends Model
     /**
      * 取得使用此方案的用戶
      */
-    public function users(): HasMany
+    public function members(): HasMany
     {
-        return $this->hasMany(User::class);
+        return $this->hasMany(Member::class);
     }
 
     /**

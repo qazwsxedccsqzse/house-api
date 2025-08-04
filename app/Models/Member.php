@@ -15,9 +15,14 @@ use Laravel\Sanctum\HasApiTokens;
 /**
  * 用戶模型
  */
-class User extends Authenticatable
+class Member extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
+
+    /**
+     * 指定資料表名稱
+     */
+    protected $table = 'members';
 
     /**
      * 可批量賦值的屬性
@@ -74,7 +79,7 @@ class User extends Authenticatable
      */
     public function fbTokens(): HasMany
     {
-        return $this->hasMany(UserFBToken::class);
+        return $this->hasMany(MemberFBToken::class);
     }
 
     /**
