@@ -4,6 +4,9 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * 管理員表
+ */
 return new class extends Migration
 {
     /**
@@ -18,7 +21,7 @@ return new class extends Migration
             $table->string('email')->unique()->comment('管理員信箱');
             $table->string('password')->comment('管理員密碼');
             $table->tinyInteger('status')->default(1)->comment('狀態：1=啟用，0=停用');
-            $table->timestamps();
+            $table->datetimes();
         });
     }
 

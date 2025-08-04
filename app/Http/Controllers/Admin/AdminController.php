@@ -25,7 +25,7 @@ class AdminController extends Controller
 
         $admins = $this->adminService->getAllAdmins($page, $limit, $search);
 
-        // 格式化响应数据
+        // Format the list
         $formattedList = $admins->getCollection()->map(function ($admin) {
             return [
                 'id' => (string) $admin->id,

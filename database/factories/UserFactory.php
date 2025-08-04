@@ -26,9 +26,15 @@ class UserFactory extends Factory
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
-            'remember_token' => Str::random(10),
+            'phone' => fake()->phoneNumber(),
+            'estate_broker_number' => fake()->regexify('[A-Z]{2}[0-9]{6}'),
+            'status' => 1,
+            'line_id' => fake()->optional()->userName(),
+            'line_picture' => fake()->optional()->imageUrl(),
+            'plan_id' => null,
+            'plan_start_date' => null,
+            'plan_end_date' => null,
         ];
     }
 

@@ -111,7 +111,7 @@
 
 ### 獲取用戶列表
 
-- **端點**: `GET /api/user`
+- **端點**: `GET /api/users`
 - **呼叫檔案**: `src/api/services/userService.ts` → `findById()`
 - **使用位置**: `src/_mock/handlers/_user.ts` → `userList`
 - **響應**:
@@ -129,7 +129,7 @@
 
 ### 獲取用戶詳情
 
-- **端點**: `GET /api/user/:id`
+- **端點**: `GET /api/users/:id`
 - **呼叫檔案**: `src/api/services/userService.ts` → `findById()`
 - **使用位置**: 用戶詳情頁面 (待實作)
 - **響應**:

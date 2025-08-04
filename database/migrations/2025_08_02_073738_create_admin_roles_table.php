@@ -4,6 +4,9 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * 管理員角色表
+ */
 return new class extends Migration
 {
     /**
@@ -15,7 +18,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('admin_id')->constrained()->onDelete('cascade');
             $table->foreignId('role_id')->constrained()->onDelete('cascade');
-            $table->timestamps();
+            $table->datetimes();
 
             // 添加唯一索引防止重複分配
             $table->unique(['admin_id', 'role_id']);
