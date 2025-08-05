@@ -30,6 +30,7 @@ class Role extends Model
      * @var array<string, string>
      */
     protected $casts = [
+        'id' => 'integer',
         'status' => 'integer',
     ];
 
