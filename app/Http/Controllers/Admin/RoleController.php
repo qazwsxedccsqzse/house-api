@@ -11,39 +11,30 @@ use App\Http\Requests\Admin\UpdateRoleRequest;
 use App\Http\Requests\Admin\AssignPermissionsRequest;
 use App\Services\RoleService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use App\Exceptions\CustomException;
 
 class RoleController extends Controller
 {
     public function __construct(
         private RoleService $roleService
-    ) {
-    }
+    ) {}
 
     /**
      * 獲取角色列表
      */
     public function index(RoleListRequest $request): JsonResponse
     {
-        try {
-            $filters = $request->validated();
-            $page = (int) ($filters['page'] ?? 1);
-            $limit = (int) ($filters['limit'] ?? 10);
+        $filters = $request->validated();
+        $page = (int) ($filters['page'] ?? 1);
+        $limit = (int) ($filters['limit'] ?? 10);
 
-            $result = $this->roleService->getRoles($filters, $page, $limit);
+        $result = $this->roleService->getRoles($filters, $page, $limit);
 
-            return response()->json([
-                'status' => 0,
-                'message' => '',
-                'data' => $result,
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => -1,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ], 500);
-        }
+        return response()->json([
+            'status' => 0,
+            'message' => '',
+            'data' => $result,
+        ]);
     }
 
     /**
@@ -51,22 +42,14 @@ class RoleController extends Controller
      */
     public function store(CreateRoleRequest $request): JsonResponse
     {
-        try {
-            $data = $request->validated();
-            $role = $this->roleService->create($data);
+        $data = $request->validated();
+        $role = $this->roleService->create($data);
 
-            return response()->json([
-                'status' => 0,
-                'message' => '角色創建成功',
-                'data' => $role,
-            ], 201);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => -1,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ], 500);
-        }
+        return response()->json([
+            'status' => 0,
+            'message' => '角色創建成功',
+            'data' => $role,
+        ]);
     }
 
     /**
@@ -74,29 +57,16 @@ class RoleController extends Controller
      */
     public function show(int $id): JsonResponse
     {
-        try {
-            $role = $this->roleService->findById($id);
-
-            if (!$role) {
-                return response()->json([
-                    'status' => -1,
-                    'message' => '角色不存在',
-                    'data' => null,
-                ], 404);
-            }
-
-            return response()->json([
-                'status' => 0,
-                'message' => '',
-                'data' => $role,
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => -1,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ], 500);
+        $role = $this->roleService->findById($id);
+        if (!$role) {
+            throw new CustomException(CustomException::ROLE_NOT_FOUND);
         }
+
+        return response()->json([
+            'status' => 0,
+            'message' => '',
+            'data' => $role,
+        ]);
     }
 
     /**
@@ -104,32 +74,20 @@ class RoleController extends Controller
      */
     public function update(UpdateRoleRequest $request, int $id): JsonResponse
     {
-        try {
-            $data = $request->validated();
-            $result = $this->roleService->update($id, $data);
+        $data = $request->validated();
+        $result = $this->roleService->update($id, $data);
 
-            if (!$result) {
-                return response()->json([
-                    'status' => -1,
-                    'message' => '角色更新失敗',
-                    'data' => null,
-                ], 500);
-            }
-
-            $role = $this->roleService->findById($id);
-
-            return response()->json([
-                'status' => 0,
-                'message' => '角色更新成功',
-                'data' => $role,
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => -1,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ], 500);
+        if (!$result) {
+            throw new CustomException(CustomException::COMMON_FAILED);
         }
+
+        $role = $this->roleService->findById($id);
+
+        return response()->json([
+            'status' => 0,
+            'message' => '角色更新成功',
+            'data' => $role,
+        ]);
     }
 
     /**
@@ -137,29 +95,16 @@ class RoleController extends Controller
      */
     public function destroy(int $id): JsonResponse
     {
-        try {
-            $result = $this->roleService->delete($id);
-
-            if (!$result) {
-                return response()->json([
-                    'status' => -1,
-                    'message' => '角色刪除失敗',
-                    'data' => null,
-                ], 500);
-            }
-
-            return response()->json([
-                'status' => 0,
-                'message' => '角色刪除成功',
-                'data' => null,
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => -1,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ], 500);
+        $result = $this->roleService->delete($id);
+        if (!$result) {
+            throw new CustomException(CustomException::COMMON_FAILED);
         }
+
+        return response()->json([
+            'status' => 0,
+            'message' => '角色刪除成功',
+            'data' => null,
+        ]);
     }
 
     /**
@@ -167,21 +112,13 @@ class RoleController extends Controller
      */
     public function assignPermissions(AssignPermissionsRequest $request, int $id): JsonResponse
     {
-        try {
-            $data = $request->validated();
-            $this->roleService->assignPermissions($id, $data['permissions']);
+        $data = $request->validated();
+        $this->roleService->assignPermissions($id, $data['permissions']);
 
-            return response()->json([
-                'status' => 0,
-                'message' => '權限分配成功',
-                'data' => null,
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => -1,
-                'message' => $e->getMessage(),
-                'data' => null,
-            ], 500);
-        }
+        return response()->json([
+            'status' => 0,
+            'message' => '權限分配成功',
+            'data' => null,
+        ]);
     }
 }

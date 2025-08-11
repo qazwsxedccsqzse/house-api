@@ -91,7 +91,7 @@ class AuthControllerTest extends TestCase
 
         $response->assertStatus(404)
             ->assertJson([
-                'status' => -1,
+                'status' => 1001,
                 'message' => '無此帳號',
                 'data' => null
             ]);
@@ -114,7 +114,7 @@ class AuthControllerTest extends TestCase
 
         $response->assertStatus(401)
             ->assertJson([
-                'status' => -1,
+                'status' => 1002,
                 'message' => '密碼錯誤',
                 'data' => null
             ]);

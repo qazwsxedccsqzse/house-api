@@ -8,6 +8,7 @@ use Closure;
 use Illuminate\Http\Request;
 use App\Foundations\RedisHelper;
 use Symfony\Component\HttpFoundation\Response;
+use App\Exceptions\CustomException;
 
 class AdminTokenMiddleware
 {
@@ -25,50 +26,30 @@ class AdminTokenMiddleware
         // 檢查 Authorization header
         $authorization = $request->header('Authorization');
         if (!$authorization) {
-            return response()->json([
-                'status' => -1,
-                'message' => '請登入',
-                'data' => null,
-            ], 403);
+            throw new CustomException(CustomException::UNAUTHORIZED);
         }
 
         // 檢查 Bearer token 格式
         if (!str_starts_with($authorization, 'Bearer ')) {
-            return response()->json([
-                'status' => -1,
-                'message' => '請登入',
-                'data' => null,
-            ], 403);
+            throw new CustomException(CustomException::UNAUTHORIZED);
         }
 
         // 提取 token
         $token = substr($authorization, 7); // 移除 "Bearer " 前綴
         if (empty($token)) {
-            return response()->json([
-                'status' => -1,
-                'message' => '請登入',
-                'data' => null,
-            ], 403);
+            throw new CustomException(CustomException::UNAUTHORIZED);
         }
 
         // 檢查 token 是否在 Redis 中存在
         $adminId = $this->redisHelper->get('admin:token:' . $token);
         if (!$adminId) {
-            return response()->json([
-                'status' => -1,
-                'message' => '請登入',
-                'data' => null,
-            ], 403);
+            throw new CustomException(CustomException::UNAUTHORIZED);
         }
 
         // 從 admin ID 獲取完整的 admin 資料
         $adminJson = $this->redisHelper->get('admin:id:' . $adminId);
         if (!$adminJson) {
-            return response()->json([
-                'status' => -1,
-                'message' => '請登入',
-                'data' => null,
-            ], 403);
+            throw new CustomException(CustomException::UNAUTHORIZED);
         }
 
         // 將 admin 資料和 admin ID 添加到請求中，供後續使用
