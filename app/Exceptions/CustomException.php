@@ -54,10 +54,10 @@ class CustomException extends Exception
     ];
 
     private const STATUS_CODE = [
-        self::UNAUTHORIZED => 403,
+        self::UNAUTHORIZED => 401,
 
         self::ADMIN_NOT_FOUND => 404,
-        self::ADMIN_PASSWORD_ERROR => 401,
+        self::ADMIN_PASSWORD_ERROR => 403,
 
         // 權限角色相關
         self::PERMISSION_NOT_FOUND => 404,
