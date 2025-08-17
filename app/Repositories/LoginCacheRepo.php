@@ -32,10 +32,12 @@ class LoginCacheRepo
      */
     public function setCodeVerifier(string $codeVerifier, string $codeChallenge): bool
     {
-        return $this->redisHelper->pipeline(function ($pipe) use ($codeVerifier, $codeChallenge) {
+        $this->redisHelper->pipeline(function ($pipe) use ($codeVerifier, $codeChallenge) {
             $pipe->set(self::CODE_VERIFIER_PREFIX . $codeVerifier, $codeVerifier, 10 * 60);
             $pipe->set(self::CODE_CHALLENGE_PREFIX . $codeChallenge, $codeVerifier, 10 * 60);
         });
+
+        return true;
     }
 
     /**
