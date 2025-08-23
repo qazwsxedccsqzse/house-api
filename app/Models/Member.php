@@ -31,14 +31,12 @@ class Member extends Authenticatable
         'name',
         'email',
         'password',
-        'phone',
-        'estate_broker_number',
         'status',
-        'line_id',
-        'line_picture',
+        'social_id',
+        'social_type',
+        'social_picture',
+        'social_name',
         'plan_id',
-        'plan_start_date',
-        'plan_end_date',
     ];
 
     /**
@@ -56,8 +54,6 @@ class Member extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'status' => 'integer',
-        'plan_start_date' => 'datetime',
-        'plan_end_date' => 'datetime',
     ];
 
     /**
@@ -67,38 +63,24 @@ class Member extends Authenticatable
     public const STATUS_INACTIVE = 0;
 
     /**
-     * 取得用戶的方案
+     * 社交平台類型常數
+     */
+    public const SOCIAL_TYPE_LINE = 1;
+    public const SOCIAL_TYPE_FACEBOOK = 2;
+
+    /**
+     * 與訂單的關聯
+     */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    /**
+     * 與方案的關聯
      */
     public function plan(): BelongsTo
     {
         return $this->belongsTo(Plan::class);
-    }
-
-    /**
-     * 取得用戶的 Facebook Token
-     */
-    public function fbTokens(): HasMany
-    {
-        return $this->hasMany(MemberFBToken::class);
-    }
-
-    /**
-     * 檢查用戶是否為正常狀態
-     */
-    public function isActive(): bool
-    {
-        return $this->status === self::STATUS_ACTIVE;
-    }
-
-    /**
-     * 檢查用戶是否有有效的方案
-     */
-    public function hasValidPlan(): bool
-    {
-        if (!$this->plan_id || !$this->plan_end_date) {
-            return false;
-        }
-
-        return now()->lt($this->plan_end_date);
     }
 }

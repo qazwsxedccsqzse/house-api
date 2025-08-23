@@ -42,26 +42,10 @@ class Plan extends Model
     public const STATUS_INACTIVE = 0;
 
     /**
-     * 取得使用此方案的用戶
+     * 與訂單的關聯
      */
-    public function members(): HasMany
+    public function orders(): HasMany
     {
-        return $this->hasMany(Member::class);
-    }
-
-    /**
-     * 檢查方案是否為正常狀態
-     */
-    public function isActive(): bool
-    {
-        return $this->status === self::STATUS_ACTIVE;
-    }
-
-    /**
-     * 取得方案價格（格式化）
-     */
-    public function getFormattedPriceAttribute(): string
-    {
-        return number_format($this->price);
+        return $this->hasMany(Order::class);
     }
 }

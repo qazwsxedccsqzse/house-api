@@ -149,8 +149,8 @@ All API requests use Form Request classes (`app/Http/Requests/Admin/`) for valid
 
 #### User API (`/api/v1/user`)
 **LINE OAuth Authentication**:
-- `GET /api/v1/user/auth/line/code-verifier` - Generate PKCE code verifier and challenge
-- `GET /api/v1/user/auth/line/oauth` - LINE OAuth callback handler
+- `GET /api/v1/frontend/auth/line/code-verifier` - Generate PKCE code verifier and challenge
+- `GET /api/v1/frontend/auth/line/oauth` - LINE OAuth callback handler
 
 **User Profile & Resources**:
 - `GET /api/v1/user/profile` - Get user profile (planned)

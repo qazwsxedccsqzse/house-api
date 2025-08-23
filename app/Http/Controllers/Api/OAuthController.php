@@ -8,11 +8,14 @@ use App\Services\LoginService;
 use App\Exceptions\CustomException;
 use App\Foundations\Social\Line;
 use Illuminate\Support\Facades\Log;
+use App\Services\MemberService;
+use Illuminate\Support\Facades\Http;
 
 class OAuthController extends Controller
 {
     public function __construct(
         private LoginService $loginService,
+        private MemberService $memberService,
         private Line $line
     ) {
     }
@@ -27,68 +30,70 @@ class OAuthController extends Controller
             $code = $request->input('code');
             $state = $request->input('state');
             $error = $request->input('error');
-            $codeChallenge = $request->input('code_challenge');
-            if (!$codeChallenge) {
-                throw new CustomException(CustomException::COMMON_FAILED, '缺少 code_challenge');
-            }
-            
+
             // 檢查是否有錯誤
             if ($error) {
                 Log::error('LINE OAuth error', ['error' => $error, 'error_description' => $request->input('error_description')]);
                 throw new CustomException(CustomException::COMMON_FAILED, 'LINE OAuth 授權失敗: ' . $error);
             }
-            
+
             // 檢查必要參數
             if (!$code) {
                 throw new CustomException(CustomException::COMMON_FAILED, '缺少 authorization code');
             }
-            
+
             // 取得設定
             $clientId = config('oauth.line.client_id');
             $clientSecret = config('oauth.line.client_secret');
             // 獲取 token 成功後的 redirect uri
             $redirectUri = config('oauth.line.redirect_uri');
-            
+
             if (!$clientId || !$clientSecret || !$redirectUri) {
                 throw new CustomException(CustomException::COMMON_FAILED, 'LINE 服務設定不完整');
             }
-            
+
             // 從 state 中取得 code_verifier (假設 state 就是 code_verifier)
             // 實際應用中可能需要更複雜的 state 管理
-            $codeVerifier = $this->loginService->getCodeVerifierByChallenge($codeChallenge);
-            if (!$codeVerifier || !$this->loginService->checkCodeVerifier($codeVerifier)) {
+            $codeVerifier = $this->loginService->getCodeVerifierByState($state);
+            if (!$codeVerifier) {
                 throw new CustomException(CustomException::COMMON_FAILED, '無效的 code verifier');
             }
-            
+
             // 交換 access token
             $tokenResponse = $this->line->exchangeCodeForToken($code, $codeVerifier, $clientId, $clientSecret, $redirectUri);
-            
             if (!$tokenResponse) {
                 throw new CustomException(CustomException::COMMON_FAILED, '無法取得 access token');
             }
-            
+
             // 取得用戶資料
             $userProfile = $this->line->getUserProfile($tokenResponse['access_token']);
-            
             if (!$userProfile) {
                 throw new CustomException(CustomException::COMMON_FAILED, '無法取得用戶資料');
             }
-            
+
             // 清除 code verifier
             $this->loginService->getAndDeleteCodeVerifier($codeVerifier);
-            
-            // 回傳成功結果
-            return response()->json([
-                'success' => true,
-                'message' => 'LINE 登入成功',
-                'data' => [
-                    'user_profile' => $userProfile,
-                    'access_token' => $tokenResponse['access_token'],
-                    'token_type' => $tokenResponse['token_type'] ?? 'Bearer',
-                    'expires_in' => $tokenResponse['expires_in'] ?? 3600,
-                ]
-            ]);
-            
+
+            // 用戶不存在的話，把用戶寫入到資料庫
+            // 存在的話, 直接登入
+            if (!$this->memberService->checkMemberSocialId($userProfile['userId'])) {
+                $this->memberService->createMember($userProfile);
+            }
+
+            $token = $this->loginService->issueAccessTokenBySocialId($userProfile['userId'], 1);
+            $appUrl = config('app.url');
+            $appDomain = parse_url($appUrl, PHP_URL_HOST);
+
+            return redirect()->away($appUrl . '/signin_handle')
+                ->withCookie(cookie()->forever(
+                    name: 'app_session',
+                    value: $token,
+                    secure: true,
+                    httpOnly: true,
+                    sameSite: 'lax',
+                    path: '/',
+                    domain: $appDomain
+                ));
         } catch (CustomException $e) {
             Log::error('LINE OAuth callback error', ['message' => $e->getMessage(), 'code' => $e->getCode()]);
             return response()->json([
@@ -114,15 +119,18 @@ class OAuthController extends Controller
      */
     public function generateCodeVerifier()
     {
-        $codeVerifier = $this->loginService->generateCodeVerifier();
-        $codeChallenge = base64_encode(hash('sha256', $codeVerifier, true));
-        $codeChallenge = str_replace('=', '', strtr($codeChallenge, '+/', '-_'));
+        [
+            'code_verifier' => $codeVerifier,
+            'code_challenge' => $codeChallenge,
+            'state' => $state
+        ] = $this->loginService->generatePKCE();
 
-        $this->loginService->setCodeVerifier($codeVerifier, $codeChallenge);
+        $this->loginService->setCodeVerifier($codeVerifier, $codeChallenge, $state);
 
         return response()->json([
             'code_verifier' => $codeVerifier,
             'code_challenge' => $codeChallenge,
+            'state' => $state,
         ]);
     }
 }

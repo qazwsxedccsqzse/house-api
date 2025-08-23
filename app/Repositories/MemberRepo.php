@@ -22,4 +22,34 @@ class MemberRepo
 
         return $query->paginate($limit, ['*'], 'page', $page);
     }
+
+    public function getMemberBySocialId(string $socialId, array $columns = ['*'])
+    {
+        return $this->member->newModelQuery()
+            ->where('social_id', $socialId)
+            ->select($columns)
+            ->first();
+    }
+
+    public function getMemberById(int $id, array $columns = ['*']): ?Member
+    {
+        return $this->member->newModelQuery()
+            ->where('id', $id)
+            ->select($columns)
+            ->first();
+    }
+
+    public function getMemberBySocialIdAndSocialType(string $socialId, int $socialType, array $columns = ['*']): ?Member
+    {
+        return $this->member->newModelQuery()
+            ->where('social_id', $socialId)
+            ->where('social_type', $socialType)
+            ->select($columns)
+            ->first();
+    }
+
+    public function createMember(array $member)
+    {
+        return $this->member->create($member);
+    }
 }

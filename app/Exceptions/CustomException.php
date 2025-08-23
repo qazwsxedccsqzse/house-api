@@ -21,6 +21,7 @@ class CustomException extends Exception
 
     // 通用
     public const COMMON_FAILED_MSG = '操作失敗';
+    public const VALIDATION_FAILED_MSG = '驗證錯誤';
 
     // 請登入
     public const UNAUTHORIZED = -1;
@@ -36,6 +37,7 @@ class CustomException extends Exception
 
     // 通用錯誤
     public const COMMON_FAILED = 3001;
+    public const VALIDATION_FAILED = 3002; // 驗證錯誤
 
     private const MESSAGE = [
         self::UNAUTHORIZED => self::UNAUTHORIZED_MSG,
@@ -51,6 +53,7 @@ class CustomException extends Exception
 
         // 通用
         self::COMMON_FAILED => self::COMMON_FAILED_MSG,
+        self::VALIDATION_FAILED => self::VALIDATION_FAILED_MSG,
     ];
 
     private const STATUS_CODE = [
@@ -66,6 +69,7 @@ class CustomException extends Exception
 
         // 通用
         self::COMMON_FAILED => 500,
+        self::VALIDATION_FAILED => 422,
     ];
 
     private int $selfCode;

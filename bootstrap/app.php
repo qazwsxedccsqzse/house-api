@@ -15,14 +15,18 @@ return Application::configure(basePath: dirname(__DIR__))
         api: __DIR__.'/../routes/api.php',
         apiPrefix: 'api/v1/admin',
     )
-    // 用戶端 API 路由 - 使用 /api/v1/user 前綴
+    // 用戶端 API 路由 - 使用 /api/v1/frontend 前綴
     ->withRouting(
-        api: __DIR__.'/../routes/api_user.php',
-        apiPrefix: 'api/v1/user',
+        api: __DIR__.'/../routes/api_frontend.php',
+        apiPrefix: 'api/v1/frontend',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // 添加 CORS middleware 到全域最前面
+        $middleware->prepend(\App\Http\Middlewares\CorsMiddleware::class);
+
         $middleware->alias([
             'admin.token' => \App\Http\Middlewares\AdminTokenMiddleware::class,
+            'member.token' => \App\Http\Middlewares\MemberTokenMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

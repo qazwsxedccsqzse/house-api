@@ -26,14 +26,12 @@ class MemberFactory extends Factory
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'password' => static::$password ??= Hash::make('password'),
-            'phone' => fake()->phoneNumber(),
-            'estate_broker_number' => fake()->regexify('[A-Z]{2}[0-9]{6}'),
             'status' => 1,
-            'line_id' => fake()->optional()->userName(),
-            'line_picture' => fake()->optional()->imageUrl(),
+            'social_id' => fake()->optional()->userName(),
+            'social_type' => fake()->optional()->randomElement([1, 2]),
+            'social_picture' => fake()->optional()->imageUrl(),
+            'social_name' => fake()->optional()->name(),
             'plan_id' => null,
-            'plan_start_date' => null,
-            'plan_end_date' => null,
         ];
     }
 }
