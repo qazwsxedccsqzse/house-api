@@ -13,6 +13,10 @@ class Order extends Model
 {
     use HasFactory, SoftDeletes;
 
+    const STATUS_INPROGRESS = 1; // 進行中
+    const STATUS_COMPLETED = 2; // 已完成
+    const STATUS_CANCELLED = 3; // 已取消
+
     /**
      * 可填充的欄位
      */

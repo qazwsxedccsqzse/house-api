@@ -37,12 +37,18 @@ class UserController extends BaseApiController
     public function getUserOrders(CommonPageRequest $request)
     {
         $validated = $request->validated();
+        /**
+         * @var array $member
+         */
         $member = $request->member;
+        $memberId = intval($member['id']);
+        $page = intval($validated['page'] ?? 1);
+        $limit = intval($validated['limit'] ?? 15);
 
         $result = $this->orderService->getOrdersByMemberId(
-            $member->id,
-            $validated['page'] ?? 1,
-            $validated['limit'] ?? 15
+            memberId: $memberId,
+            page: $page,
+            limit: $limit
         );
 
         return $this->success([
