@@ -10,8 +10,17 @@ class CorsMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        // 允許的來源（必須明確指定，不能是 *）, 當你設定 Access-Control-Allow-Credentials: true 時，瀏覽器不允許 Access-Control-Allow-Origin: *
-        $allowedOrigin = config('app.url'); // Next.js 的地址
+        // 允許的來源 - 支援多個來源
+        $allowedOrigins = [
+            'http://localhost:3000',  // Next.js 開發環境
+            'http://localhost:3001',  // 其他可能的開發端口
+            'http://127.0.0.1:3000', // 本地 IP 地址
+            'http://127.0.0.1:3001',
+        ];
+
+        // 檢查請求來源是否在允許列表中
+        $origin = $request->header('Origin');
+        $allowedOrigin = in_array($origin, $allowedOrigins) ? $origin : $allowedOrigins[0];
 
         // 處理 OPTIONS 預檢請求
         if ($request->isMethod('OPTIONS')) {
