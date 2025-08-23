@@ -22,7 +22,7 @@ class OrderRepo
     {
         return $this->order->newQuery()
             ->with(['plan'])
-            ->byMember($memberId)
+            ->where('member_id', $memberId)
             ->orderBy('created_at', 'desc')
             ->paginate($limit, ['*'], 'page', $page);
     }
@@ -34,7 +34,7 @@ class OrderRepo
     {
         return $this->order->newQuery()
             ->with(['plan'])
-            ->byMember($memberId)
+            ->where('member_id', $memberId)
             ->orderBy('created_at', 'desc')
             ->get();
     }
@@ -46,8 +46,8 @@ class OrderRepo
     {
         return $this->order->newQuery()
             ->with(['plan'])
-            ->byMember($memberId)
-            ->byStatus($status)
+            ->where('member_id', $memberId)
+            ->where('status', $status)
             ->orderBy('created_at', 'desc')
             ->paginate($limit, ['*'], 'page', $page);
     }

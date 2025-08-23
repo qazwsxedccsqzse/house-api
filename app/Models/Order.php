@@ -49,20 +49,4 @@ class Order extends Model
     {
         return $this->belongsTo(Plan::class);
     }
-
-    /**
-     * 查詢指定會員的訂單
-     */
-    public function scopeByMember($query, int $memberId)
-    {
-        return $query->where('member_id', $memberId);
-    }
-
-    /**
-     * 查詢指定狀態的訂單
-     */
-    public function scopeByStatus($query, string $status)
-    {
-        return $query->where('status', $status);
-    }
 }

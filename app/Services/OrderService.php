@@ -61,7 +61,7 @@ class OrderService
     {
         // 這裡可以加入業務邏輯驗證
         // 例如：檢查會員是否存在、方案是否有效等
-        
+
         return $this->orderRepo->create($data);
     }
 
@@ -71,7 +71,7 @@ class OrderService
     public function updateOrder(int $orderId, array $data): bool
     {
         $order = $this->orderRepo->findById($orderId);
-        
+
         if (!$order) {
             return false;
         }
@@ -85,7 +85,7 @@ class OrderService
     public function deleteOrder(int $orderId): bool
     {
         $order = $this->orderRepo->findById($orderId);
-        
+
         if (!$order) {
             return false;
         }
