@@ -19,7 +19,7 @@ class LoginService
     /**
      * 產生 code verifier
      *
-     * @return string
+     * @return array
      */
     public function generatePKCE(): array
     {
