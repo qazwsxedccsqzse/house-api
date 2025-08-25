@@ -29,16 +29,16 @@ class OrderSeeder extends Seeder
         foreach ($members as $member) {
             // 隨機建立 1-5 個訂單
             $orderCount = rand(1, 5);
-            
+
             for ($i = 0; $i < $orderCount; $i++) {
                 $plan = $plans->random();
                 $startDate = now()->subDays(rand(0, 365));
                 $endDate = $startDate->copy()->addDays(rand(30, 365));
-                
+
                 Order::create([
                     'member_id' => $member->id,
                     'plan_id' => $plan->id,
-                    'status' => $this->getRandomStatus($startDate, $endDate),
+                    'status' => Order::STATUS_INPROGRESS,
                     'price' => $plan->price ?? rand(100, 5000),
                     'start_date' => $startDate,
                     'end_date' => $endDate,
@@ -55,7 +55,7 @@ class OrderSeeder extends Seeder
     private function getRandomStatus($startDate, $endDate): string
     {
         $now = now();
-        
+
         if ($now < $startDate) {
             return 'pending';
         } elseif ($now >= $startDate && $now <= $endDate) {

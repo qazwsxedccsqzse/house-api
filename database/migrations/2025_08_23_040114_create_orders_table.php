@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('member_id')->comment('會員ID');
             $table->unsignedBigInteger('plan_id')->comment('方案ID');
-            $table->string('status')->comment('訂單狀態');
+            $table->unsignedTinyInteger('status')->comment('訂單狀態');
             $table->decimal('price', 10, 2)->comment('訂單金額');
             $table->dateTime('start_date')->comment('開始日期');
             $table->dateTime('end_date')->comment('結束日期');
