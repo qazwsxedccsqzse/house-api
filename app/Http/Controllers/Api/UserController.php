@@ -9,12 +9,14 @@ use App\Services\MemberService;
 use App\Services\OrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use App\Services\FbTokenService;
 
 class UserController extends BaseApiController
 {
     public function __construct(
         private MemberService $memberService,
-        private OrderService $orderService
+        private OrderService $orderService,
+        private FbTokenService $fbTokenService
     ) {
     }
 
@@ -59,6 +61,34 @@ class UserController extends BaseApiController
                 'per_page' => $result->perPage(),
                 'total' => $result->total(),
             ]
+        ]);
+    }
+
+    /**
+     * 獲取用戶的粉絲頁
+     */
+    public function getUserPages(Request $request)
+    {
+        $member = $request->member;
+        $userLongLivedToken = $this->fbTokenService->getFbUserToken($member['id']);
+        if (!$userLongLivedToken) {
+            return $this->success([
+                'user_pages' => [],
+                'message' => '用戶沒有 FB 的 User Long lived Token',
+            ]);
+        }
+
+        $userPages = $this->fbTokenService->getUserPageTokens($userLongLivedToken->access_token);
+        if (!$userPages) {
+            return $this->success([
+                'user_pages' => [],
+                'message' => '用戶沒有 FB 的粉絲頁',
+            ]);
+        }
+
+        return $this->success([
+            'user_pages' => $userPages,
+            'message' => 'success',
         ]);
     }
 }

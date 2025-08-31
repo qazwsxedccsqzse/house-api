@@ -27,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin.token' => \App\Http\Middlewares\AdminTokenMiddleware::class,
             'member.token' => \App\Http\Middlewares\MemberTokenMiddleware::class,
+            'member.optional-token' => \App\Http\Middlewares\MemberOptionalTokenMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

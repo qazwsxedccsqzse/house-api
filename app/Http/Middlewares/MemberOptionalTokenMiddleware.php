@@ -9,7 +9,7 @@ use App\Exceptions\CustomException;
 use App\Repositories\LoginCacheRepo;
 use Illuminate\Support\Facades\Log;
 
-class MemberTokenMiddleware
+class MemberOptionalTokenMiddleware
 {
     public function __construct(private LoginCacheRepo $loginCacheRepo)
     {
@@ -19,7 +19,7 @@ class MemberTokenMiddleware
     {
         $token = $request->cookie('app_session'); // 已由 EncryptCookies 解密
         if (!$token) {
-            throw new CustomException(CustomException::UNAUTHORIZED);
+            return $next($request);
         }
 
         $member = $this->loginCacheRepo->getAccessToken($token);

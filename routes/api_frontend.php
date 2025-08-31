@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\OAuthController;
+use App\Http\Controllers\Api\TokenController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\PlanController;
@@ -23,6 +24,27 @@ Route::group(['prefix' => 'auth'], function () {
         Route::get('/code-verifier', [OAuthController::class, 'generateCodeVerifier']);
         // callback url
         Route::get('/oauth', [OAuthController::class, 'lineOauthCallback']);
+    });
+
+    // fb oauth
+    Route::group(['prefix' => 'fb'], function () {
+        // generate code verifier
+        Route::get('/code-verifier', [OAuthController::class, 'generateFBCodeVerifier'])->middleware('member.optional-token');
+        // callback url
+        Route::get('/oauth', [OAuthController::class, 'fbOauthCallback']);
+    });
+    // fb token
+    Route::group(['prefix' => 'fb-token', 'middleware' => ['member.token']], function () {
+        // 取得用戶 FB 的 User Long lived Token
+        Route::get('/user-token', [TokenController::class, 'getUserToken'])->name('api.frontend.fb-token.user-token');
+        // 取得 token 過期時間
+        Route::get('/expire-time', [TokenController::class, 'getUserTokenExpiresTime'])->name('api.frontend.fb-token.user-token-expires-at');
+
+    });
+    // fb api
+    Route::group(['prefix' => 'fb-api', 'middleware' => ['member.token']], function () {
+        // 獲取用戶的粉絲頁
+        Route::post('/user-pages', [UserController::class, 'getUserPages'])->name('api.frontend.fb-api.user-pages');
     });
 
     // 用戶登出

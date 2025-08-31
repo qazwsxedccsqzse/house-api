@@ -83,4 +83,12 @@ class Member extends Authenticatable
     {
         return $this->belongsTo(Plan::class);
     }
+
+    /**
+     * 與 Facebook Token 的關聯
+     */
+    public function fbTokens(): HasMany
+    {
+        return $this->hasMany(FbToken::class);
+    }
 }
