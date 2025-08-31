@@ -45,6 +45,10 @@ Route::group(['prefix' => 'auth'], function () {
     Route::group(['prefix' => 'fb-api', 'middleware' => ['member.token']], function () {
         // 獲取用戶的粉絲頁
         Route::post('/user-pages', [UserController::class, 'getUserPages'])->name('api.frontend.fb-api.user-pages');
+        // 同步會員的 Facebook 粉絲頁
+        Route::post('/member-pages', [TokenController::class, 'syncMemberPage'])->name('api.frontend.fb-api.member-pages');
+        // 取得會員存入的粉絲頁列表
+        Route::get('/member-pages', [TokenController::class, 'getMemberPages'])->name('api.frontend.fb-api.get-member-pages');
     });
 
     // 用戶登出

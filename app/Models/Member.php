@@ -91,4 +91,12 @@ class Member extends Authenticatable
     {
         return $this->hasMany(FbToken::class);
     }
+
+    /**
+     * 與會員粉絲頁的關聯
+     */
+    public function memberPages(): HasMany
+    {
+        return $this->hasMany(MemberPage::class);
+    }
 }

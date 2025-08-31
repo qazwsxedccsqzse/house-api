@@ -170,6 +170,8 @@ All API requests use Form Request classes (`app/Http/Requests/Admin/`) for valid
 - Social integrations should be placed in `app/Foundations/Social/`
 - Write comprehensive unit tests for all service classes
 - Use mock objects for external dependencies in tests
+- 只要有產生 service or 修改 service, 都需要有對應的單元測試, 只針對 service
+- 結束前都需要確認單元測試有執行通過
 
 ### Environment Configuration
 
