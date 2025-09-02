@@ -56,6 +56,14 @@ class MemberPageRepo
     }
 
     /**
+     * 批量建立會員粉絲頁
+     */
+    public function createMemberPages(array $dataList): bool
+    {
+        return $this->memberPage->newModelQuery()->insert($dataList);
+    }
+
+    /**
      * 更新會員粉絲頁
      */
     public function updateMemberPage(int $id, array $data): bool
@@ -110,16 +118,7 @@ class MemberPageRepo
             ->delete();
     }
 
-    /**
-     * 根據會員 ID 和粉絲頁 ID 陣列批量刪除會員粉絲頁
-     */
-    public function deleteMemberPagesByMemberIdAndPageIds(int $memberId, array $pageIds): int
-    {
-        return $this->memberPage->newModelQuery()
-            ->where('member_id', $memberId)
-            ->whereIn('page_id', $pageIds)
-            ->delete();
-    }
+
 
     /**
      * 檢查會員是否已有特定粉絲頁 ID 的記錄

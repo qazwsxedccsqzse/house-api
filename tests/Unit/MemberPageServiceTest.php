@@ -337,11 +337,12 @@ class MemberPageServiceTest extends TestCase
 
         // 驗證結果
         $this->assertIsArray($result);
-        $this->assertCount(2, $result);
-        $this->assertEquals('123456789', $result[0]['page_id']);
-        $this->assertEquals('Test Page 1', $result[0]['page_name']);
-        $this->assertEquals('987654321', $result[1]['page_id']);
-        $this->assertEquals('Test Page 2', $result[1]['page_name']);
+        $this->assertArrayHasKey('fan_pages', $result);
+        $this->assertCount(2, $result['fan_pages']);
+        $this->assertEquals('123456789', $result['fan_pages'][0]['page_id']);
+        $this->assertEquals('Test Page 1', $result['fan_pages'][0]['page_name']);
+        $this->assertEquals('987654321', $result['fan_pages'][1]['page_id']);
+        $this->assertEquals('Test Page 2', $result['fan_pages'][1]['page_name']);
     }
 
     /**
@@ -395,207 +396,167 @@ class MemberPageServiceTest extends TestCase
         $this->assertNull($result);
     }
 
-    /**
-     * 測試刪除會員粉絲頁成功
-     */
-    public function test_delete_member_page_success(): void
-    {
-        // 準備測試資料
-        $memberId = 1;
-        $pageId = '123456789';
-        $memberPage = new MemberPage();
-        $memberPage->id = 1;
 
-        // Mock expectations
-        $this->memberPageRepoMock
-            ->shouldReceive('getMemberPageByMemberIdAndPageId')
-            ->with($memberId, $pageId, ['id'])
-            ->once()
-            ->andReturn($memberPage);
-
-        $this->memberPageRepoMock
-            ->shouldReceive('deleteMemberPage')
-            ->with(1)
-            ->once()
-            ->andReturn(1);
-
-        // 執行測試
-        $result = $this->memberPageService->deleteMemberPage($memberId, $pageId);
-
-        // 驗證結果
-        $this->assertTrue($result);
-    }
 
     /**
-     * 測試刪除會員粉絲頁失敗 - 找不到記錄
+     * 測試替換會員粉絲頁成功
      */
-    public function test_delete_member_page_not_found(): void
-    {
-        // 準備測試資料
-        $memberId = 1;
-        $pageId = '123456789';
-
-        // Mock expectations
-        $this->memberPageRepoMock
-            ->shouldReceive('getMemberPageByMemberIdAndPageId')
-            ->with($memberId, $pageId, ['id'])
-            ->once()
-            ->andReturn(null);
-
-        // 執行測試
-        $result = $this->memberPageService->deleteMemberPage($memberId, $pageId);
-
-        // 驗證結果
-        $this->assertFalse($result);
-    }
-
-    /**
-     * 測試刪除會員粉絲頁失敗 - 刪除失敗
-     */
-    public function test_delete_member_page_delete_failed(): void
-    {
-        // 準備測試資料
-        $memberId = 1;
-        $pageId = '123456789';
-        $memberPage = new MemberPage();
-        $memberPage->id = 1;
-
-        // Mock expectations
-        $this->memberPageRepoMock
-            ->shouldReceive('getMemberPageByMemberIdAndPageId')
-            ->with($memberId, $pageId, ['id'])
-            ->once()
-            ->andReturn($memberPage);
-
-        $this->memberPageRepoMock
-            ->shouldReceive('deleteMemberPage')
-            ->with(1)
-            ->once()
-            ->andReturn(0);
-
-        // 執行測試
-        $result = $this->memberPageService->deleteMemberPage($memberId, $pageId);
-
-        // 驗證結果
-        $this->assertFalse($result);
-    }
-
-    /**
-     * 測試批量刪除會員粉絲頁成功
-     */
-    public function test_delete_member_pages_success(): void
+    public function test_replace_member_pages_success(): void
     {
         // 準備測試資料
         $memberId = 1;
         $pageIds = ['123456789', '987654321'];
 
-        $existingPages = new Collection([
-            (object) ['page_id' => '123456789'],
-            (object) ['page_id' => '987654321'],
-            (object) ['page_id' => '555555555'], // 這個不會被刪除
-        ]);
+        $fbToken = new FbToken();
+        $fbToken->access_token = 'test_user_token';
+
+        $userPageTokens = [
+            [
+                'id' => '123456789',
+                'name' => 'Test Page 1',
+                'access_token' => 'test_page_token_1'
+            ],
+            [
+                'id' => '987654321',
+                'name' => 'Test Page 2',
+                'access_token' => 'test_page_token_2'
+            ]
+        ];
+
+        $memberPage1 = new MemberPage();
+        $memberPage2 = new MemberPage();
 
         // Mock expectations
-        $this->memberPageRepoMock
-            ->shouldReceive('getMemberPagesByMemberId')
-            ->with($memberId, ['page_id'])
+        $this->fbTokenRepoMock
+            ->shouldReceive('getFbUserToken')
+            ->with($memberId, ['access_token'])
             ->once()
-            ->andReturn($existingPages);
+            ->andReturn($fbToken);
+
+        $this->fbTokenServiceMock
+            ->shouldReceive('getUserPageTokens')
+            ->with('test_user_token')
+            ->once()
+            ->andReturn($userPageTokens);
 
         $this->memberPageRepoMock
-            ->shouldReceive('deleteMemberPagesByMemberIdAndPageIds')
-            ->with($memberId, $pageIds)
+            ->shouldReceive('deleteMemberPagesByMemberId')
+            ->with($memberId)
             ->once()
             ->andReturn(2);
 
+        $this->memberPageRepoMock
+            ->shouldReceive('createMemberPages')
+            ->with(Mockery::on(function ($dataList) use ($memberId) {
+                return count($dataList) === 2 &&
+                       $dataList[0]['member_id'] === $memberId &&
+                       $dataList[0]['page_id'] === '123456789' &&
+                       $dataList[0]['page_name'] === 'Test Page 1' &&
+                       $dataList[0]['access_token'] === 'test_page_token_1' &&
+                       $dataList[1]['member_id'] === $memberId &&
+                       $dataList[1]['page_id'] === '987654321' &&
+                       $dataList[1]['page_name'] === 'Test Page 2' &&
+                       $dataList[1]['access_token'] === 'test_page_token_2' &&
+                       isset($dataList[0]['created_at']) &&
+                       isset($dataList[0]['updated_at']) &&
+                       isset($dataList[1]['created_at']) &&
+                       isset($dataList[1]['updated_at']);
+            }))
+            ->once()
+            ->andReturn(true);
+
         // Mock Log facade
         Log::shouldReceive('info')
-            ->once()
-            ->with(
-                '批量刪除會員粉絲頁成功',
-                Mockery::on(function ($data) use ($memberId, $pageIds) {
-                    return $data['member_id'] === $memberId &&
-                           $data['page_ids'] === $pageIds &&
-                           $data['deleted_count'] === 2;
-                })
-            );
+            ->twice()
+            ->andReturn(null);
 
         // 避免其他 Log 方法被調用
         Log::shouldReceive('error')->andReturn(null);
         Log::shouldReceive('warning')->andReturn(null);
 
         // 執行測試
-        $result = $this->memberPageService->deleteMemberPages($memberId, $pageIds);
+        $result = $this->memberPageService->replaceMemberPages($memberId, $pageIds);
 
         // 驗證結果
         $this->assertTrue($result);
     }
 
     /**
-     * 測試批量刪除會員粉絲頁失敗 - 空陣列
+     * 測試替換會員粉絲頁失敗 - 找不到 FB Token
      */
-    public function test_delete_member_pages_empty_array(): void
-    {
-        // 準備測試資料
-        $memberId = 1;
-        $pageIds = [];
-
-        // 執行測試
-        $result = $this->memberPageService->deleteMemberPages($memberId, $pageIds);
-
-        // 驗證結果
-        $this->assertFalse($result);
-    }
-
-    /**
-     * 測試批量刪除會員粉絲頁失敗 - 包含不存在的粉絲頁
-     */
-    public function test_delete_member_pages_invalid_page_ids(): void
-    {
-        // 準備測試資料
-        $memberId = 1;
-        $pageIds = ['123456789', '999999999']; // 999999999 不存在
-
-        $existingPages = new Collection([
-            (object) ['page_id' => '123456789'],
-        ]);
-
-        // Mock expectations
-        $this->memberPageRepoMock
-            ->shouldReceive('getMemberPagesByMemberId')
-            ->with($memberId, ['page_id'])
-            ->once()
-            ->andReturn($existingPages);
-
-        // Mock Log facade - 使用更寬鬆的匹配
-        Log::shouldReceive('warning')
-            ->once()
-            ->andReturn(null);
-
-        // 避免其他 Log 方法被調用
-        Log::shouldReceive('error')->andReturn(null);
-        Log::shouldReceive('info')->andReturn(null);
-
-        // 執行測試
-        $result = $this->memberPageService->deleteMemberPages($memberId, $pageIds);
-
-        // 驗證結果
-        $this->assertFalse($result);
-    }
-
-    /**
-     * 測試批量刪除會員粉絲頁失敗 - 發生異常
-     */
-    public function test_delete_member_pages_exception(): void
+    public function test_replace_member_pages_fail_no_fb_token(): void
     {
         // 準備測試資料
         $memberId = 1;
         $pageIds = ['123456789'];
 
         // Mock expectations
-        $this->memberPageRepoMock
-            ->shouldReceive('getMemberPagesByMemberId')
-            ->with($memberId, ['page_id'])
+        $this->fbTokenRepoMock
+            ->shouldReceive('getFbUserToken')
+            ->with($memberId, ['access_token'])
+            ->once()
+            ->andReturn(null);
+
+        // 執行測試
+        $result = $this->memberPageService->replaceMemberPages($memberId, $pageIds);
+
+        // 驗證結果
+        $this->assertFalse($result);
+    }
+
+    /**
+     * 測試替換會員粉絲頁失敗 - 找不到指定粉絲頁
+     */
+    public function test_replace_member_pages_fail_page_not_found(): void
+    {
+        // 準備測試資料
+        $memberId = 1;
+        $pageIds = ['123456789', '999999999']; // 999999999 不存在
+
+        $fbToken = new FbToken();
+        $fbToken->access_token = 'test_user_token';
+
+        $userPageTokens = [
+            [
+                'id' => '123456789',
+                'name' => 'Test Page 1',
+                'access_token' => 'test_page_token_1'
+            ]
+        ];
+
+        // Mock expectations
+        $this->fbTokenRepoMock
+            ->shouldReceive('getFbUserToken')
+            ->with($memberId, ['access_token'])
+            ->once()
+            ->andReturn($fbToken);
+
+        $this->fbTokenServiceMock
+            ->shouldReceive('getUserPageTokens')
+            ->with('test_user_token')
+            ->once()
+            ->andReturn($userPageTokens);
+
+        // 執行測試
+        $result = $this->memberPageService->replaceMemberPages($memberId, $pageIds);
+
+        // 驗證結果
+        $this->assertFalse($result);
+    }
+
+    /**
+     * 測試替換會員粉絲頁失敗 - 發生異常
+     */
+    public function test_replace_member_pages_fail_exception(): void
+    {
+        // 準備測試資料
+        $memberId = 1;
+        $pageIds = ['123456789'];
+
+        // Mock expectations
+        $this->fbTokenRepoMock
+            ->shouldReceive('getFbUserToken')
+            ->with($memberId, ['access_token'])
             ->once()
             ->andThrow(new Exception('Database error'));
 
@@ -603,7 +564,7 @@ class MemberPageServiceTest extends TestCase
         Log::shouldReceive('error')
             ->once()
             ->with(
-                '批量刪除會員粉絲頁失敗',
+                '替換會員粉絲頁失敗',
                 Mockery::on(function ($data) use ($memberId, $pageIds) {
                     return $data['member_id'] === $memberId &&
                            $data['page_ids'] === $pageIds &&
@@ -612,57 +573,7 @@ class MemberPageServiceTest extends TestCase
             );
 
         // 執行測試
-        $result = $this->memberPageService->deleteMemberPages($memberId, $pageIds);
-
-        // 驗證結果
-        $this->assertFalse($result);
-    }
-
-    /**
-     * 測試批量刪除會員粉絲頁失敗 - 刪除數量為 0
-     */
-    public function test_delete_member_pages_no_deleted(): void
-    {
-        // 準備測試資料
-        $memberId = 1;
-        $pageIds = ['123456789', '987654321'];
-
-        $existingPages = new Collection([
-            (object) ['page_id' => '123456789'],
-            (object) ['page_id' => '987654321'],
-        ]);
-
-        // Mock expectations
-        $this->memberPageRepoMock
-            ->shouldReceive('getMemberPagesByMemberId')
-            ->with($memberId, ['page_id'])
-            ->once()
-            ->andReturn($existingPages);
-
-        $this->memberPageRepoMock
-            ->shouldReceive('deleteMemberPagesByMemberIdAndPageIds')
-            ->with($memberId, $pageIds)
-            ->once()
-            ->andReturn(0);
-
-        // Mock Log facade
-        Log::shouldReceive('info')
-            ->once()
-            ->with(
-                '批量刪除會員粉絲頁成功',
-                Mockery::on(function ($data) use ($memberId, $pageIds) {
-                    return $data['member_id'] === $memberId &&
-                           $data['page_ids'] === $pageIds &&
-                           $data['deleted_count'] === 0;
-                })
-            );
-
-        // 避免其他 Log 方法被調用
-        Log::shouldReceive('error')->andReturn(null);
-        Log::shouldReceive('warning')->andReturn(null);
-
-        // 執行測試
-        $result = $this->memberPageService->deleteMemberPages($memberId, $pageIds);
+        $result = $this->memberPageService->replaceMemberPages($memberId, $pageIds);
 
         // 驗證結果
         $this->assertFalse($result);
