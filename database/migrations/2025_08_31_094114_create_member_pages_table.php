@@ -18,8 +18,7 @@ return new class extends Migration
             $table->string('page_name');
             $table->text('access_token');
             $table->datetimes();
-            
-            $table->foreign('member_id')->references('id')->on('members')->onDelete('cascade');
+
             $table->unique(['member_id', 'page_id']);
         });
     }
