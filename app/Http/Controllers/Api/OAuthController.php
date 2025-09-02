@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\BaseApiController;
 use Illuminate\Http\Request;
 use App\Services\LoginService;
 use App\Exceptions\CustomException;
@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Crypt;
 use App\Consts\FBTokenType;
 use App\Services\FbTokenService;
 
-class OAuthController extends Controller
+class OAuthController extends BaseApiController
 {
     public function __construct(
         private LoginService $loginService,
@@ -215,7 +215,7 @@ class OAuthController extends Controller
 
         $this->loginService->setCodeVerifier($codeVerifier, $codeChallenge, $state);
 
-        return response()->json([
+        return $this->success([
             'code_verifier' => $codeVerifier,
             'code_challenge' => $codeChallenge,
             'state' => $state,
@@ -245,7 +245,7 @@ class OAuthController extends Controller
 
         $frontState = Crypt::encryptString($state . '_' . $member['id']);
 
-        return response()->json([
+        return $this->success([
             'code_verifier' => $codeVerifier,
             'code_challenge' => $codeChallenge,
             'state' => $frontState,

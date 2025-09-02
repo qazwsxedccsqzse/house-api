@@ -479,4 +479,192 @@ class MemberPageServiceTest extends TestCase
         // 驗證結果
         $this->assertFalse($result);
     }
+
+    /**
+     * 測試批量刪除會員粉絲頁成功
+     */
+    public function test_delete_member_pages_success(): void
+    {
+        // 準備測試資料
+        $memberId = 1;
+        $pageIds = ['123456789', '987654321'];
+
+        $existingPages = new Collection([
+            (object) ['page_id' => '123456789'],
+            (object) ['page_id' => '987654321'],
+            (object) ['page_id' => '555555555'], // 這個不會被刪除
+        ]);
+
+        // Mock expectations
+        $this->memberPageRepoMock
+            ->shouldReceive('getMemberPagesByMemberId')
+            ->with($memberId, ['page_id'])
+            ->once()
+            ->andReturn($existingPages);
+
+        $this->memberPageRepoMock
+            ->shouldReceive('deleteMemberPagesByMemberIdAndPageIds')
+            ->with($memberId, $pageIds)
+            ->once()
+            ->andReturn(2);
+
+        // Mock Log facade
+        Log::shouldReceive('info')
+            ->once()
+            ->with(
+                '批量刪除會員粉絲頁成功',
+                Mockery::on(function ($data) use ($memberId, $pageIds) {
+                    return $data['member_id'] === $memberId &&
+                           $data['page_ids'] === $pageIds &&
+                           $data['deleted_count'] === 2;
+                })
+            );
+
+        // 避免其他 Log 方法被調用
+        Log::shouldReceive('error')->andReturn(null);
+        Log::shouldReceive('warning')->andReturn(null);
+
+        // 執行測試
+        $result = $this->memberPageService->deleteMemberPages($memberId, $pageIds);
+
+        // 驗證結果
+        $this->assertTrue($result);
+    }
+
+    /**
+     * 測試批量刪除會員粉絲頁失敗 - 空陣列
+     */
+    public function test_delete_member_pages_empty_array(): void
+    {
+        // 準備測試資料
+        $memberId = 1;
+        $pageIds = [];
+
+        // 執行測試
+        $result = $this->memberPageService->deleteMemberPages($memberId, $pageIds);
+
+        // 驗證結果
+        $this->assertFalse($result);
+    }
+
+    /**
+     * 測試批量刪除會員粉絲頁失敗 - 包含不存在的粉絲頁
+     */
+    public function test_delete_member_pages_invalid_page_ids(): void
+    {
+        // 準備測試資料
+        $memberId = 1;
+        $pageIds = ['123456789', '999999999']; // 999999999 不存在
+
+        $existingPages = new Collection([
+            (object) ['page_id' => '123456789'],
+        ]);
+
+        // Mock expectations
+        $this->memberPageRepoMock
+            ->shouldReceive('getMemberPagesByMemberId')
+            ->with($memberId, ['page_id'])
+            ->once()
+            ->andReturn($existingPages);
+
+        // Mock Log facade - 使用更寬鬆的匹配
+        Log::shouldReceive('warning')
+            ->once()
+            ->andReturn(null);
+
+        // 避免其他 Log 方法被調用
+        Log::shouldReceive('error')->andReturn(null);
+        Log::shouldReceive('info')->andReturn(null);
+
+        // 執行測試
+        $result = $this->memberPageService->deleteMemberPages($memberId, $pageIds);
+
+        // 驗證結果
+        $this->assertFalse($result);
+    }
+
+    /**
+     * 測試批量刪除會員粉絲頁失敗 - 發生異常
+     */
+    public function test_delete_member_pages_exception(): void
+    {
+        // 準備測試資料
+        $memberId = 1;
+        $pageIds = ['123456789'];
+
+        // Mock expectations
+        $this->memberPageRepoMock
+            ->shouldReceive('getMemberPagesByMemberId')
+            ->with($memberId, ['page_id'])
+            ->once()
+            ->andThrow(new Exception('Database error'));
+
+        // Mock Log facade
+        Log::shouldReceive('error')
+            ->once()
+            ->with(
+                '批量刪除會員粉絲頁失敗',
+                Mockery::on(function ($data) use ($memberId, $pageIds) {
+                    return $data['member_id'] === $memberId &&
+                           $data['page_ids'] === $pageIds &&
+                           $data['error'] === 'Database error';
+                })
+            );
+
+        // 執行測試
+        $result = $this->memberPageService->deleteMemberPages($memberId, $pageIds);
+
+        // 驗證結果
+        $this->assertFalse($result);
+    }
+
+    /**
+     * 測試批量刪除會員粉絲頁失敗 - 刪除數量為 0
+     */
+    public function test_delete_member_pages_no_deleted(): void
+    {
+        // 準備測試資料
+        $memberId = 1;
+        $pageIds = ['123456789', '987654321'];
+
+        $existingPages = new Collection([
+            (object) ['page_id' => '123456789'],
+            (object) ['page_id' => '987654321'],
+        ]);
+
+        // Mock expectations
+        $this->memberPageRepoMock
+            ->shouldReceive('getMemberPagesByMemberId')
+            ->with($memberId, ['page_id'])
+            ->once()
+            ->andReturn($existingPages);
+
+        $this->memberPageRepoMock
+            ->shouldReceive('deleteMemberPagesByMemberIdAndPageIds')
+            ->with($memberId, $pageIds)
+            ->once()
+            ->andReturn(0);
+
+        // Mock Log facade
+        Log::shouldReceive('info')
+            ->once()
+            ->with(
+                '批量刪除會員粉絲頁成功',
+                Mockery::on(function ($data) use ($memberId, $pageIds) {
+                    return $data['member_id'] === $memberId &&
+                           $data['page_ids'] === $pageIds &&
+                           $data['deleted_count'] === 0;
+                })
+            );
+
+        // 避免其他 Log 方法被調用
+        Log::shouldReceive('error')->andReturn(null);
+        Log::shouldReceive('warning')->andReturn(null);
+
+        // 執行測試
+        $result = $this->memberPageService->deleteMemberPages($memberId, $pageIds);
+
+        // 驗證結果
+        $this->assertFalse($result);
+    }
 }

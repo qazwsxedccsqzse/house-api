@@ -96,7 +96,7 @@ class MemberPageService
             'id', 'page_id', 'page_name', 'created_at', 'updated_at'
         ]);
 
-        return $memberPages->map(function ($memberPage) {
+        $pages = $memberPages->map(function ($memberPage) {
             return [
                 'id' => $memberPage->id,
                 'page_id' => $memberPage->page_id,
@@ -105,6 +105,10 @@ class MemberPageService
                 'updated_at' => $memberPage->updated_at,
             ];
         })->toArray();
+
+        return [
+            'fan_pages' => $pages,
+        ];
     }
 
     /**
@@ -116,16 +120,58 @@ class MemberPageService
     }
 
     /**
-     * 刪除會員粉絲頁
+     * 批量刪除會員粉絲頁
+     */
+    public function deleteMemberPages(int $memberId, array $pageIds): bool
+    {
+        try {
+            if (empty($pageIds)) {
+                return false;
+            }
+
+            // 檢查所有要刪除的粉絲頁是否都屬於該會員
+            $existingPages = $this->memberPageRepo->getMemberPagesByMemberId($memberId, ['page_id']);
+            $existingPageIds = $existingPages->pluck('page_id')->toArray();
+
+            // 檢查請求的 page_ids 是否都存在於該會員的粉絲頁中
+            $invalidPageIds = array_diff($pageIds, $existingPageIds);
+            if (!empty($invalidPageIds)) {
+                Log::warning('嘗試刪除不存在的粉絲頁', [
+                    'member_id' => $memberId,
+                    'invalid_page_ids' => $invalidPageIds,
+                    'requested_page_ids' => $pageIds
+                ]);
+                return false;
+            }
+
+            // 執行批量刪除
+            $deletedCount = $this->memberPageRepo->deleteMemberPagesByMemberIdAndPageIds($memberId, $pageIds);
+
+            Log::info('批量刪除會員粉絲頁成功', [
+                'member_id' => $memberId,
+                'page_ids' => $pageIds,
+                'deleted_count' => $deletedCount
+            ]);
+
+            return $deletedCount > 0;
+
+        } catch (Exception $e) {
+            Log::error('批量刪除會員粉絲頁失敗', [
+                'member_id' => $memberId,
+                'page_ids' => $pageIds,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return false;
+        }
+    }
+
+    /**
+     * 刪除單個會員粉絲頁（向後相容）
      */
     public function deleteMemberPage(int $memberId, string $pageId): bool
     {
-        $memberPage = $this->memberPageRepo->getMemberPageByMemberIdAndPageId($memberId, $pageId, ['id']);
-        
-        if (!$memberPage) {
-            return false;
-        }
-
-        return $this->memberPageRepo->deleteMemberPage($memberPage->id) > 0;
+        return $this->deleteMemberPages($memberId, [$pageId]);
     }
 }

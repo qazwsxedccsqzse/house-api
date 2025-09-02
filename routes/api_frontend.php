@@ -49,6 +49,8 @@ Route::group(['prefix' => 'auth'], function () {
         Route::post('/member-pages', [TokenController::class, 'syncMemberPage'])->name('api.frontend.fb-api.member-pages');
         // 取得會員存入的粉絲頁列表
         Route::get('/member-pages', [TokenController::class, 'getMemberPages'])->name('api.frontend.fb-api.get-member-pages');
+        // 移除會員的 Facebook 粉絲頁
+        Route::delete('/member-pages', [TokenController::class, 'deleteMemberPage'])->name('api.frontend.fb-api.delete-member-page');
     });
 
     // 用戶登出

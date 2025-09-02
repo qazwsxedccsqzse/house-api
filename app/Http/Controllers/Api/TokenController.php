@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use Illuminate\Http\Request;
 use App\Services\FbTokenService;
 use App\Services\MemberPageService;
+use App\Http\Requests\Api\DeleteMemberPageRequest;
 use Illuminate\Http\JsonResponse;
 
 class TokenController extends BaseApiController
@@ -73,7 +74,7 @@ class TokenController extends BaseApiController
 
         // 統一處理為陣列格式
         $targetPageIds = $pageIds ?: [$pageId];
-        
+
         // 驗證陣列格式
         if (!is_array($targetPageIds) || empty($targetPageIds)) {
             return $this->error('page_ids 必須是非空陣列', 400);
@@ -98,5 +99,25 @@ class TokenController extends BaseApiController
         $memberPages = $this->memberPageService->getMemberPages($member['id']);
 
         return $this->success($memberPages);
+    }
+
+    /**
+     * 刪除會員的 Facebook 粉絲頁
+     */
+    public function deleteMemberPage(DeleteMemberPageRequest $request): JsonResponse
+    {
+        $member = $request->member;
+        $pageIds = $request->input('page_ids');
+
+        $success = $this->memberPageService->deleteMemberPages($member['id'], $pageIds);
+
+        if ($success) {
+            return $this->success([
+                'message' => '粉絲頁刪除成功',
+                'deleted_page_ids' => $pageIds
+            ]);
+        } else {
+            return $this->error('粉絲頁刪除失敗，請確認粉絲頁 ID 是否正確', 400);
+        }
     }
 }
