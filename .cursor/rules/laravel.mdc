@@ -122,3 +122,4 @@ alwaysApply: true
   9. Implement proper database transactions for data integrity.
   10. Use Laravel's built-in scheduling features for recurring tasks.
   11. All comment should be 繁體中文.
+  12. 每個 Service 都需要有單元測試, 且操作資料庫的部分都應該被 mock.

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\OAuthController;
 use App\Http\Controllers\Api\TokenController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\PostController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\PlanController;
 
@@ -67,6 +68,20 @@ Route::group(['prefix' => 'user', 'middleware' => ['member.token']], function ()
 
 // plans
 Route::get('/plans', [PlanController::class, 'getPlans']);
+
+// 貼文相關
+Route::group(['prefix' => 'posts', 'middleware' => ['member.token']], function () {
+    // 建立貼文
+    Route::post('/', [PostController::class, 'store'])->name('api.frontend.posts.store');
+    // 取得貼文列表
+    Route::get('/', [PostController::class, 'index'])->name('api.frontend.posts.index');
+    // 取得單一貼文
+    Route::get('/{id}', [PostController::class, 'show'])->name('api.frontend.posts.show');
+    // 更新貼文
+    Route::put('/{id}', [PostController::class, 'update'])->name('api.frontend.posts.update');
+    // 刪除貼文
+    Route::delete('/{id}', [PostController::class, 'destroy'])->name('api.frontend.posts.destroy');
+});
 
 
 // 測試端點
