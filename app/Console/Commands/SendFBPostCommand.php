@@ -8,6 +8,7 @@ use App\Jobs\SendFBPostJob;
 use App\Services\PostService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
+use App\Foundations\RedisHelper;
 
 /**
  * 發送 Facebook 貼文命令
@@ -25,7 +26,8 @@ class SendFBPostCommand extends Command
     protected $description = '發送排程中的 Facebook 貼文';
 
     public function __construct(
-        private PostService $postService
+        private PostService $postService,
+        private RedisHelper $redisHelper
     ) {
         parent::__construct();
     }
