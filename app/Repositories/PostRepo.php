@@ -130,12 +130,13 @@ class PostRepo
     /**
      * 更新貼文的 post_id 和狀態
      */
-    public function updatePostId(Post $post, string $postId, int $status): bool
+    public function updatePostId(string $postId, array $data): bool
     {
-        return $post->update([
-            'post_id' => $postId,
-            'status' => $status,
-        ]);
+        return $this->post
+            ->newModelQuery()
+            ->where('id', $postId)
+            ->limit(1)
+            ->update($data) > 0;
     }
 
     /**

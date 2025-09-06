@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Foundations\FileHelper;
+use App\Models\MemberPage;
 use App\Models\Post;
+use App\Repositories\MemberPageRepo;
 use App\Repositories\PostRepo;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -18,7 +20,8 @@ class PostService
 {
     public function __construct(
         private PostRepo $postRepo,
-        private FileHelper $fileHelper
+        private FileHelper $fileHelper,
+        private MemberPageRepo $memberPageRepo
     ) {}
 
     /**
@@ -65,6 +68,21 @@ class PostService
     public function getPost(int $memberId, int $postId): ?Post
     {
         return $this->postRepo->findByMemberIdAndId($memberId, $postId);
+    }
+
+    /**
+     * 取得貼文的粉絲頁
+     */
+    public function getPostMemberPage(Post $post): ?MemberPage
+    {
+        if (!$post->member_id || !$post->page_id) {
+            return null;
+        }
+
+        return $this->memberPageRepo->getMemberPageByMemberIdAndPageId(
+            $post->member_id,
+            (string) $post->page_id
+        );
     }
 
     /**
@@ -140,9 +158,9 @@ class PostService
     /**
      * 更新貼文的 post_id 和狀態
      */
-    public function updatePostId(Post $post, string $postId, int $status): bool
+    public function updatePostId(string $postId, array $data): bool
     {
-        return $this->postRepo->updatePostId($post, $postId, $status);
+        return $this->postRepo->updatePostId($postId, $data);
     }
 
     /**

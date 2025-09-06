@@ -34,6 +34,11 @@ class SendFBPostJob implements ShouldQueue, ShouldBeUnique
      */
     public int $timeout = 60;
 
+    /**
+     * 重試間隔時間（秒）
+     */
+    public int $backoff = 60;
+
     public function __construct(
         private Post $post
     ) {}
@@ -52,9 +57,6 @@ class SendFBPostJob implements ShouldQueue, ShouldBeUnique
     public function handle(PostService $postService, FB $fb, FileHelper $fileHelper): void
     {
         try {
-            // 重新載入貼文以獲取最新狀態
-            $this->post->refresh();
-
             // 檢查貼文狀態，只處理發送中的貼文
             if ($this->post->status !== Post::STATUS_SENDING) {
                 Log::channel('facebook')->info('貼文狀態已變更，跳過處理', [
@@ -69,20 +71,19 @@ class SendFBPostJob implements ShouldQueue, ShouldBeUnique
                 'post_id' => $this->post->id,
                 'member_id' => $this->post->member_id,
                 'page_id' => $this->post->page_id,
+                'attempt' => $this->attempts(),
+                'max_tries' => $this->tries,
             ]);
 
             // 取得粉絲頁的 access_token
-            $memberPage = MemberPage::where('member_id', $this->post->member_id)
-                ->where('page_id', $this->post->page_id)
-                ->first();
-
+            $memberPage = $postService->getPostMemberPage($this->post);
             if (!$memberPage) {
                 Log::channel('facebook')->error('找不到對應的粉絲頁', [
                     'post_id' => $this->post->id,
                     'member_id' => $this->post->member_id,
                     'page_id' => $this->post->page_id,
                 ]);
-                $this->markAsFailed();
+                $this->handleError('找不到對應的粉絲頁', false);
                 return;
             }
 
@@ -107,12 +108,12 @@ class SendFBPostJob implements ShouldQueue, ShouldBeUnique
                     'member_id' => $this->post->member_id,
                     'page_id' => $this->post->page_id,
                 ]);
-                $this->markAsFailed();
+                $this->handleError('Facebook 貼文發送失敗', true);
                 return;
             }
 
             // 更新貼文狀態為已發佈
-            $postService->updatePostId($this->post, $fbPostId, Post::STATUS_PUBLISHED);
+            $postService->updatePostId($this->post->id, ['post_id' => $fbPostId, 'status' => Post::STATUS_PUBLISHED]);
 
             Log::channel('facebook')->info('Facebook 貼文發送成功', [
                 'post_id' => $this->post->id,
@@ -129,32 +130,46 @@ class SendFBPostJob implements ShouldQueue, ShouldBeUnique
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            $this->markAsFailed();
+            $this->handleError($e->getMessage(), true);
         }
     }
 
     /**
-     * 標記任務為失敗
+     * 處理錯誤，決定是否重試
      */
-    private function markAsFailed(): void
+    private function handleError(string $errorMessage, bool $shouldRetry = true): void
     {
-        // 更新貼文狀態為發送失敗
-        app(PostService::class)->updatePostId($this->post, '', Post::STATUS_SEND_FAILED);
+        Log::channel('facebook')->warning('處理任務錯誤', [
+            'post_id' => $this->post->id,
+            'error' => $errorMessage,
+            'attempts' => $this->attempts(),
+            'max_tries' => $this->tries,
+            'should_retry' => $shouldRetry,
+        ]);
 
-        // 標記任務為失敗
-        $this->fail();
+        if (!$shouldRetry || $this->attempts() >= $this->tries) {
+            // 達到重試上限或不可重試錯誤，標記為最終失敗
+            $this->fail(new \Exception($errorMessage));
+        } else {
+            // 可重試錯誤，拋出異常讓 Laravel 自動重試
+            throw new \Exception($errorMessage);
+        }
     }
 
     /**
-     * 任務失敗處理
+     * 任務失敗處理（所有重試都用盡後調用）
      */
     public function failed(\Throwable $exception): void
     {
-        Log::channel('facebook')->error('Facebook 貼文發送任務失敗', [
+        Log::channel('facebook')->error('Facebook 貼文發送任務最終失敗', [
             'post_id' => $this->post->id,
             'member_id' => $this->post->member_id,
             'page_id' => $this->post->page_id,
             'error' => $exception->getMessage(),
+            'total_attempts' => $this->attempts(),
         ]);
+
+        // 確保貼文狀態更新為失敗
+        app(PostService::class)->updatePostId($this->post->id, ['status' => Post::STATUS_SEND_FAILED]);
     }
 }

@@ -64,8 +64,6 @@ class SendFBPostCommand extends Command
 
             // 將每篇貼文分發給 Job
             foreach ($posts as $post) {
-                // 重新載入以獲取最新狀態
-                $post->refresh();
                 SendFBPostJob::dispatch($post);
                 $this->line("已分發貼文 ID: {$post->id} 到發送佇列");
             }
