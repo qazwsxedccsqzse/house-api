@@ -59,6 +59,7 @@ class Post extends Model
     public const STATUS_PUBLISHED = 2; // 已發佈
     public const STATUS_UNPUBLISHED = 3; // 已下架
     public const STATUS_SEND_FAILED = 4; // 發送失敗
+    public const STATUS_SENDING = 5; // 發送中
 
     /**
      * 與會員的關聯
@@ -99,6 +100,7 @@ class Post extends Model
             self::STATUS_PUBLISHED => '已發佈',
             self::STATUS_UNPUBLISHED => '已下架',
             self::STATUS_SEND_FAILED => '發送失敗',
+            self::STATUS_SENDING => '發送中',
             default => '未知狀態',
         };
     }

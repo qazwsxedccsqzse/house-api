@@ -10,6 +10,7 @@ use App\Models\MemberPage;
 use App\Models\Post;
 use App\Services\PostService;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -19,7 +20,7 @@ use Illuminate\Support\Facades\Log;
 /**
  * 發送 Facebook 貼文任務
  */
-class SendFBPostJob implements ShouldQueue
+class SendFBPostJob implements ShouldQueue, ShouldBeUnique
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -38,11 +39,32 @@ class SendFBPostJob implements ShouldQueue
     ) {}
 
     /**
+     * 任務唯一識別符
+     */
+    public function uniqueId(): string
+    {
+        return "send_fb_post_{$this->post->id}";
+    }
+
+    /**
      * 執行任務
      */
     public function handle(PostService $postService, FB $fb, FileHelper $fileHelper): void
     {
         try {
+            // 重新載入貼文以獲取最新狀態
+            $this->post->refresh();
+
+            // 檢查貼文狀態，只處理發送中的貼文
+            if ($this->post->status !== Post::STATUS_SENDING) {
+                Log::channel('facebook')->info('貼文狀態已變更，跳過處理', [
+                    'post_id' => $this->post->id,
+                    'current_status' => $this->post->status,
+                    'expected_status' => Post::STATUS_SENDING,
+                ]);
+                return;
+            }
+
             Log::channel('facebook')->info('開始處理 Facebook 貼文發送', [
                 'post_id' => $this->post->id,
                 'member_id' => $this->post->member_id,

@@ -152,4 +152,12 @@ class PostService
     {
         return $this->postRepo->getScheduledPosts($limit);
     }
+
+    /**
+     * 批量標記貼文為發送中, 貼文需要為排程中的狀態
+     */
+    public function markPostsAsSending(array $postIds): bool
+    {
+        return $this->postRepo->updateStatus($postIds, Post::STATUS_SENDING);
+    }
 }

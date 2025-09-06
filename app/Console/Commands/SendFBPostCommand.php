@@ -51,10 +51,21 @@ class SendFBPostCommand extends Command
                 return self::SUCCESS;
             }
 
-            $this->info("找到 {$posts->count()} 篇排程貼文，開始分發任務...");
+            $this->info("找到 {$posts->count()} 篇排程貼文，開始處理...");
+
+            // 批量更新貼文狀態為發送中
+            $postIds = $posts->pluck('id')->toArray();
+            $updateResult = $this->postService->markPostsAsSending($postIds);
+
+            if (!$updateResult) {
+                Log::channel('facebook')->warning('無法更新貼文狀態為發送中', ['post_ids' => $postIds]);
+                $this->warning('部分貼文可能已被其他程序處理');
+            }
 
             // 將每篇貼文分發給 Job
             foreach ($posts as $post) {
+                // 重新載入以獲取最新狀態
+                $post->refresh();
                 SendFBPostJob::dispatch($post);
                 $this->line("已分發貼文 ID: {$post->id} 到發送佇列");
             }

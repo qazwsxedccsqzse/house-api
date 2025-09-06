@@ -13,12 +13,15 @@ use Illuminate\Database\Eloquent\Collection;
  */
 class PostRepo
 {
+    public function __construct(
+        private Post $post
+    ) {}
     /**
      * 建立貼文
      */
     public function create(array $data): Post
     {
-        return Post::create($data);
+        return $this->post->create($data);
     }
 
     /**
@@ -26,7 +29,7 @@ class PostRepo
      */
     public function findById(int $id): ?Post
     {
-        return Post::find($id);
+        return $this->post->find($id);
     }
 
     /**
@@ -38,7 +41,8 @@ class PostRepo
         int $limit = 10,
         ?int $status = null
     ): LengthAwarePaginator {
-        $query = Post::where('member_id', $memberId)
+        $query = $this->post->newQuery()
+            ->where('member_id', $memberId)
             ->with(['member', 'memberPage']);
 
         if ($status !== null) {
@@ -54,7 +58,8 @@ class PostRepo
      */
     public function findByMemberIdAndId(int $memberId, int $id): ?Post
     {
-        return Post::where('member_id', $memberId)
+        return $this->post->newQuery()
+            ->where('member_id', $memberId)
             ->where('id', $id)
             ->first();
     }
@@ -88,7 +93,8 @@ class PostRepo
      */
     public function getPostCountByMemberId(int $memberId, ?int $status = null): int
     {
-        $query = Post::where('member_id', $memberId);
+        $query = $this->post->newQuery()
+            ->where('member_id', $memberId);
 
         if ($status !== null) {
             $query->where('status', $status);
@@ -102,7 +108,8 @@ class PostRepo
      */
     public function checkMemberPageOwnership(int $memberId, int $pageId): bool
     {
-        return Post::where('member_id', $memberId)
+        return $this->post->newQuery()
+            ->where('member_id', $memberId)
             ->where('page_id', $pageId)
             ->exists();
     }
@@ -112,7 +119,8 @@ class PostRepo
      */
     public function getScheduledPosts(int $limit = 3): Collection
     {
-        return Post::where('status', Post::STATUS_SCHEDULED)
+        return $this->post->newQuery()
+            ->where('status', Post::STATUS_SCHEDULED)
             ->where('post_at', '<=', now())
             ->orderBy('post_at', 'asc')
             ->limit($limit)
@@ -128,5 +136,16 @@ class PostRepo
             'post_id' => $postId,
             'status' => $status,
         ]);
+    }
+
+    /**
+     * 批量更新貼文狀態
+     */
+    public function updateStatus(array $postIds, int $status): bool
+    {
+        return $this->post->newQuery()
+            ->whereIn('id', $postIds)
+            ->where('status', Post::STATUS_SCHEDULED)
+            ->update(['status' => $status]) > 0;
     }
 }
