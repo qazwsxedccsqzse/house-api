@@ -36,7 +36,7 @@ class FB
             return $response->json();
         }
 
-        Log::error('FB exchange code for token failed', ['response' => $response->body(), 'form' => $form]);
+        Log::channel('facebook')->error('FB exchange code for token failed', ['response' => $response->body(), 'form' => $form]);
 
         return null;
     }
@@ -53,7 +53,7 @@ class FB
             return $response->json();
         }
 
-        Log::error('FB get user profile failed', ['response' => $response->body()]);
+        Log::channel('facebook')->error('FB get user profile failed', ['response' => $response->body()]);
 
         return null;
     }
@@ -73,7 +73,7 @@ class FB
             return null;
         }
 
-        Log::error('FB get token info failed', ['response' => $response->body(), 'input_token' => $token, 'access_token' => config('oauth.fb.client_id')."|".config('oauth.fb.client_secret')]);
+        Log::channel('facebook')->error('FB get token info failed', ['response' => $response->body(), 'input_token' => $token, 'access_token' => config('oauth.fb.client_id')."|".config('oauth.fb.client_secret')]);
 
         return null;
     }
@@ -90,7 +90,7 @@ class FB
             return $response->json();
         }
 
-        Log::error('FB get user groups failed', ['response' => $response->body(), 'user_long_lived_token' => $userLongLivedToken]);
+        Log::channel('facebook')->error('FB get user groups failed', ['response' => $response->body(), 'user_long_lived_token' => $userLongLivedToken]);
 
         return null;
     }
@@ -106,8 +106,86 @@ class FB
             return $response->json();
         }
 
-        Log::error('FB get user pages failed', ['response' => $response->body(), 'user_long_lived_token' => $userLongLivedToken]);
+        Log::channel('facebook')->error('FB get user pages failed', ['response' => $response->body(), 'user_long_lived_token' => $userLongLivedToken]);
 
         return null;
+    }
+
+    /**
+     * 發布圖片到粉絲頁
+     * @return string 圖片 id
+     */
+    public function uploadImageToPage(string $pageId, string $accessToken, string $imageUrl): string
+    {
+        $uploadUrl = 'https://graph.facebook.com/' . self::VERSION . '/' . $pageId . '/photos';
+        $response = Http::post($uploadUrl, ['access_token' => $accessToken, 'image' => $imageUrl]);
+        if ($response->successful()) {
+            $result = $response->json();
+            return $result['id'];
+        }
+
+        Log::channel('facebook')->error('FB upload image to page failed', ['response' => $response->body(), 'page_id' => $pageId, 'access_token' => $accessToken, 'image_url' => $imageUrl]);
+
+        return '';
+    }
+
+    /**
+     * 發布貼文到粉絲頁
+     * @return string 貼文 id
+     */
+    public function postToPage(string $pageId, string $accessToken, string $message, string $imageId = ''): string
+    {
+        $postUrl = 'https://graph.facebook.com/' . self::VERSION . '/' . $pageId . '/feed';
+        $data = [
+            'access_token' => $accessToken,
+            'message' => $message,
+        ];
+
+        if (!empty($imageId)) {
+            $data['object_attachment'] = $imageId;
+        }
+
+        $response = Http::post($postUrl, $data);
+
+        if ($response->successful()) {
+            $result = $response->json();
+            Log::channel('facebook')->info('FB post to page success', [
+                'api_url' => $postUrl,
+                'request_body' => $data,
+                'response' => $result,
+                'page_id' => $pageId,
+            ]);
+            return $result['id'];
+        }
+
+        Log::channel('facebook')->error('FB post to page failed', [
+            'api_url' => $postUrl,
+            'request_body' => $data,
+            'response' => $response->body(),
+            'page_id' => $pageId,
+        ]);
+
+        return '';
+    }
+
+    /**
+     * 上傳圖片到粉絲頁並發送貼文
+     * @return string 貼文 id
+     */
+    public function uploadImageAndPostToPage(string $pageId, string $accessToken, string $message, string $imageUrl): string
+    {
+        // 先上傳圖片
+        $imageId = $this->uploadImageToPage($pageId, $accessToken, $imageUrl);
+
+        if (empty($imageId)) {
+            Log::channel('facebook')->error('FB upload image failed, cannot post', [
+                'page_id' => $pageId,
+                'image_url' => $imageUrl,
+            ]);
+            return '';
+        }
+
+        // 再發送貼文
+        return $this->postToPage($pageId, $accessToken, $message, $imageId);
     }
 }

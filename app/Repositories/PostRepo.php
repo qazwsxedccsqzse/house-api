@@ -106,4 +106,27 @@ class PostRepo
             ->where('page_id', $pageId)
             ->exists();
     }
+
+    /**
+     * 取得排程中的貼文
+     */
+    public function getScheduledPosts(int $limit = 3): Collection
+    {
+        return Post::where('status', Post::STATUS_SCHEDULED)
+            ->where('post_at', '<=', now())
+            ->orderBy('post_at', 'asc')
+            ->limit($limit)
+            ->get();
+    }
+
+    /**
+     * 更新貼文的 post_id 和狀態
+     */
+    public function updatePostId(Post $post, string $postId, int $status): bool
+    {
+        return $post->update([
+            'post_id' => $postId,
+            'status' => $status,
+        ]);
+    }
 }

@@ -8,6 +8,7 @@ use App\Foundations\FileHelper;
 use App\Models\Post;
 use App\Repositories\PostRepo;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 
 /**
@@ -134,5 +135,21 @@ class PostService
     public function canUpdatePost(Post $post): bool
     {
         return $post->status !== Post::STATUS_PUBLISHED;
+    }
+
+    /**
+     * 更新貼文的 post_id 和狀態
+     */
+    public function updatePostId(Post $post, string $postId, int $status): bool
+    {
+        return $this->postRepo->updatePostId($post, $postId, $status);
+    }
+
+    /**
+     * 取得排程中的貼文
+     */
+    public function getScheduledPosts(int $limit = 3): Collection
+    {
+        return $this->postRepo->getScheduledPosts($limit);
     }
 }
